@@ -8,6 +8,8 @@ import (
 	"github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository"
 )
 
+var _ LedgerService = (*service)(nil)
+
 type LedgerService interface {
 	CreateTransaction(
 		ctx context.Context,
@@ -31,9 +33,24 @@ type service struct {
 func New(
 	transactionRepository repository.TransactionRepository,
 	budgetRepository repository.BudgetRepository,
-) *service {
+) LedgerService {
 	return &service{
 		transactionRepository: transactionRepository,
 		budgetRepository:      budgetRepository,
 	}
+}
+
+func monthBounds(value time.Time) (time.Time, time.Time) {
+	from := time.Date(
+		value.Year(),
+		value.Month(),
+		1,
+		0,
+		0,
+		0,
+		0,
+		value.Location(),
+	)
+
+	return from, from.AddDate(0, 1, 0)
 }
