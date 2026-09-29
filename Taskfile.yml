@@ -12,23 +12,35 @@ vars:
   PROTOC_GEN_GO_GRPC_VERSION: 'v1.5.1'
   GRPCURL_VERSION: 'v1.9.3'
   MOCKERY_VERSION: 'v2.53.3'
+  GOOSE_VERSION: 'v3.28.0'
 
   BIN_DIR: '{{.ROOT_DIR}}/bin'
-  GOLANGCI_LINT: '{{.BIN_DIR}}/golangci-lint'
-  GCI: '{{.BIN_DIR}}/gci'
-  GOFUMPT: '{{.BIN_DIR}}/gofumpt'
-  BUF: '{{.BIN_DIR}}/buf'
-  PROTOC_GEN_GO: '{{.BIN_DIR}}/protoc-gen-go'
-  PROTOC_GEN_GO_GRPC: '{{.BIN_DIR}}/protoc-gen-go-grpc'
-  GRPCURL: '{{.BIN_DIR}}/grpcurl'
-  MOCKERY: '{{.BIN_DIR}}/mockery'
+
+  GOLANGCI_LINT: '{{.ROOT_DIR}}/bin/golangci-lint'
+  GCI: '{{.ROOT_DIR}}/bin/gci'
+  GOFUMPT: '{{.ROOT_DIR}}/bin/gofumpt'
+  BUF: '{{.ROOT_DIR}}/bin/buf'
+  PROTOC_GEN_GO: '{{.ROOT_DIR}}/bin/protoc-gen-go'
+  PROTOC_GEN_GO_GRPC: '{{.ROOT_DIR}}/bin/protoc-gen-go-grpc'
+  GRPCURL: '{{.ROOT_DIR}}/bin/grpcurl'
+  MOCKERY: '{{.ROOT_DIR}}/bin/mockery'
+  GOOSE: '{{.ROOT_DIR}}/bin/goose'
+
+  LEDGER_MIGRATIONS_DIR: '{{.ROOT_DIR}}/migrations/ledger'
 
 silent: true
 
 tasks:
   tools:
     desc: Install all development tools into ./bin
-    deps: [format:install, lint:install, buf:install, proto:install, grpcurl:install, mockery:install]
+    deps:
+      - format:install
+      - lint:install
+      - buf:install
+      - proto:install
+      - mockery:install
+      - goose:install
+      - grpcurl:install
 
   format:install:
     desc: Install gofumpt and gci into ./bin
@@ -56,6 +68,7 @@ tasks:
           find "$module" -type f -name '*.go' ! -path '*/mocks/*' ! -path '*/gen/*' -exec {{.GCI}} write -s standard -s default -s 'prefix(github.com/Vlad777-bit/personal-finance-analytics)' {} +
         done
 
+
   lint:install:
     desc: Install golangci-lint into ./bin
     cmds:
@@ -72,6 +85,7 @@ tasks:
           rm -f {{.GOLANGCI_LINT}}
           GOBIN={{.BIN_DIR}} go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@${EXPECTED}
         fi
+
 
   lint:
     desc: Run golangci-lint in every workspace module
@@ -94,6 +108,7 @@ tasks:
         done
         exit "$ERR"
 
+
   deps:update:
     desc: Sync workspace and tidy every Go module
     cmds:
@@ -105,6 +120,7 @@ tasks:
           echo "go mod tidy: $module"
           (cd "$module" && go mod tidy)
         done
+
 
   buf:install:
     desc: Install buf into ./bin
@@ -183,6 +199,7 @@ tasks:
           (cd "$module" && go test ./...)
         done
 
+
   test:race:
     desc: Run tests with the race detector in every workspace module
     cmds:
@@ -197,6 +214,7 @@ tasks:
           echo "race: $module"
           (cd "$module" && go test -race ./...)
         done
+
 
   test:coverage:
     desc: Build a combined coverage profile for modules that contain packages
@@ -217,6 +235,7 @@ tasks:
         done
         go tool cover -func=coverage/cover.out
 
+
   gateway:
     desc: Run Gateway locally
     dir: gateway
@@ -226,9 +245,146 @@ tasks:
   up:
     desc: Start project infrastructure with Compose
     cmds:
-      - docker compose -f compose.yaml up -d --build
+      - podman compose -f compose.yaml up -d --build
 
   down:
     desc: Stop project infrastructure
     cmds:
-      - docker compose -f compose.yaml down
+      - podman compose -f compose.yaml down
+
+  goose:install:
+    desc: "Устанавливает goose в ./bin"
+    cmds:
+      - |
+        set -e
+
+        mkdir -p "{{.BIN_DIR}}"
+
+        CURRENT_VERSION=""
+
+        if [ -x "{{.GOOSE}}" ]; then
+          CURRENT_VERSION="$("{{.GOOSE}}" -version 2>/dev/null | awk '{print $3}' || true)"
+        fi
+
+        if [ "$CURRENT_VERSION" != "{{.GOOSE_VERSION}}" ]; then
+          echo "📦 Устанавливаем goose {{.GOOSE_VERSION}}..."
+
+          rm -f "{{.GOOSE}}"
+
+          GOBIN="{{.BIN_DIR}}" \
+            go install github.com/pressly/goose/v3/cmd/goose@{{.GOOSE_VERSION}}
+        fi
+
+        if [ ! -x "{{.GOOSE}}" ]; then
+          echo "❌ goose installation failed"
+          exit 1
+        fi
+
+        echo "✅ goose: $("{{.GOOSE}}" -version)"
+
+
+
+  migration:create:
+    desc: "Создаёт новую SQL-миграцию для Ledger"
+    deps:
+      - goose:install
+    requires:
+      vars:
+        - NAME
+    cmds:
+      - |
+        set -e
+
+        mkdir -p "{{.LEDGER_MIGRATIONS_DIR}}"
+
+        echo "📝 Creating migration: {{.NAME}}"
+
+        "{{.GOOSE}}" \
+          -dir "{{.LEDGER_MIGRATIONS_DIR}}" \
+          -s \
+          create "{{.NAME}}" sql
+
+        echo "✅ Migration created"
+
+
+
+
+
+
+  migration:status:
+    desc: "Показывает состояние миграций Ledger"
+    deps:
+      - goose:install
+    cmds:
+      - |
+        set -a
+        [ ! -f .env ] || . ./.env
+        set +a
+
+        if [ -z "$LEDGER_DATABASE_URL" ]; then
+          echo "❌ LEDGER_DATABASE_URL is not set"
+          exit 1
+        fi
+
+        echo "🔎 Checking migrations status..."
+
+        {{.GOOSE}} \
+          -dir {{.LEDGER_MIGRATIONS_DIR}} \
+          postgres \
+          "$LEDGER_DATABASE_URL" \
+          status -v
+
+
+
+  migration:up:
+    desc: "Применяет все pending-миграции Ledger"
+    deps:
+      - goose:install
+    cmds:
+      - |
+        set -a
+        [ ! -f .env ] || . ./.env
+        set +a
+
+        if [ -z "$LEDGER_DATABASE_URL" ]; then
+          echo "❌ LEDGER_DATABASE_URL is not set"
+          exit 1
+        fi
+
+        echo "🚀 Running migrations..."
+
+        {{.GOOSE}} \
+          -dir {{.LEDGER_MIGRATIONS_DIR}} \
+          postgres \
+          "$LEDGER_DATABASE_URL" \
+          up -v
+
+        echo "✅ Migrations applied"
+
+
+
+  migration:down:
+    desc: "Откатывает последнюю миграцию Ledger"
+    deps:
+      - goose:install
+    cmds:
+      - |
+        set -a
+        [ ! -f .env ] || . ./.env
+        set +a
+
+        if [ -z "$LEDGER_DATABASE_URL" ]; then
+          echo "❌ LEDGER_DATABASE_URL is not set"
+          exit 1
+        fi
+
+        echo "↩️ Reverting migration..."
+
+        {{.GOOSE}} \
+          -dir {{.LEDGER_MIGRATIONS_DIR}} \
+          postgres \
+          "$LEDGER_DATABASE_URL" \
+          down -v
+
+        echo "✅ Migration reverted"
+
