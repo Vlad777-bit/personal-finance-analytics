@@ -4,7 +4,7 @@
 
 ## Требования
 
-- Go 1.26+
+- Go 1.27+
 - Docker Compose-совместимый CLI (Docker Compose или Podman с Docker-compatible command)
 - Task — опционально, только для удобства разработки
 
