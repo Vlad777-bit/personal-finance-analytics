@@ -236,6 +236,34 @@ tasks:
         go tool cover -func=coverage/cover.out
 
 
+  test:integration:
+    desc: "Запускает integration-тесты Ledger с PostgreSQL"
+    cmds:
+      - |
+        set -e
+  
+        set -a
+        [ ! -f .env ] || . ./.env
+        set +a
+  
+        if [ -z "$LEDGER_DATABASE_URL" ]; then
+          echo "❌ LEDGER_DATABASE_URL is not set"
+          exit 1
+        fi
+  
+        echo "🧪 Running Ledger integration tests..."
+  
+        (
+          cd ledger
+          go test \
+            -tags=integration \
+            -count=1 \
+            -v \
+            ./internal/repository/database/...
+        )
+
+
+
   gateway:
     desc: Run Gateway locally
     dir: gateway
@@ -284,6 +312,7 @@ tasks:
 
 
 
+
   migration:create:
     desc: "Создаёт новую SQL-миграцию для Ledger"
     deps:
@@ -305,6 +334,7 @@ tasks:
           create "{{.NAME}}" sql
 
         echo "✅ Migration created"
+
 
 
 
@@ -336,6 +366,7 @@ tasks:
 
 
 
+
   migration:up:
     desc: "Применяет все pending-миграции Ledger"
     deps:
@@ -363,6 +394,7 @@ tasks:
 
 
 
+
   migration:down:
     desc: "Откатывает последнюю миграцию Ledger"
     deps:
@@ -387,4 +419,5 @@ tasks:
           down -v
 
         echo "✅ Migration reverted"
+
 
