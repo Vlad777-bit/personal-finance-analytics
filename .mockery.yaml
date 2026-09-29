@@ -7,4 +7,11 @@ mockname: "{{.InterfaceName}}"
 resolve-type-alias: false
 issue-845-fix: true
 
-packages: {}
+packages:
+  github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/service:
+    config:
+      include-regex: ".*Service"
+
+  github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository:
+    config:
+      include-regex: ".*Repository"
