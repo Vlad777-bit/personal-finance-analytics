@@ -86,12 +86,10 @@ formatters:
   enable:
     - gofumpt
     - gci
-
   settings:
     gofumpt:
       extra:
         group-params: true
-
     gci:
       sections:
         - Standard

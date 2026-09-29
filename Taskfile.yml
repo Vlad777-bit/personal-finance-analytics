@@ -1,6 +1,9 @@
 version: '3'
 
 vars:
+  GO_VERSION: '1.26'
+  MODULES: 'gateway ledger auth shared'
+
   GOLANGCI_LINT_VERSION: 'v2.14.0'
   GCI_VERSION: 'v0.13.6'
   GOFUMPT_VERSION: 'v0.8.0'
@@ -9,8 +12,8 @@ vars:
   PROTOC_GEN_GO_GRPC_VERSION: 'v1.5.1'
   GRPCURL_VERSION: 'v1.9.3'
   MOCKERY_VERSION: 'v2.53.3'
-  BIN_DIR: '{{.ROOT_DIR}}/bin'
 
+  BIN_DIR: '{{.ROOT_DIR}}/bin'
   GOLANGCI_LINT: '{{.BIN_DIR}}/golangci-lint'
   GCI: '{{.BIN_DIR}}/gci'
   GOFUMPT: '{{.BIN_DIR}}/gofumpt'
@@ -20,14 +23,18 @@ vars:
   GRPCURL: '{{.BIN_DIR}}/grpcurl'
   MOCKERY: '{{.BIN_DIR}}/mockery'
 
+silent: true
+
 tasks:
   tools:
     desc: Install all development tools into ./bin
-    deps: [formatters:install, lint:install, buf:install, proto:install, grpcurl:install, mockery:install]
+    deps: [format:install, lint:install, buf:install, proto:install, grpcurl:install, mockery:install]
 
-  formatters:install:
+  format:install:
+    desc: Install gofumpt and gci into ./bin
     cmds:
       - |
+        set -e
         mkdir -p {{.BIN_DIR}}
         [ -x {{.GOFUMPT}} ] || GOBIN={{.BIN_DIR}} go install mvdan.cc/gofumpt@{{.GOFUMPT_VERSION}}
         [ -x {{.GCI}} ] || GOBIN={{.BIN_DIR}} go install github.com/daixiang0/gci@{{.GCI_VERSION}}
@@ -36,35 +43,84 @@ tasks:
       - test -x {{.GCI}}
 
   format:
-    deps: [formatters:install]
+    desc: Format Go code in every workspace module
+    deps: [format:install]
     cmds:
-      - '{{.GOFUMPT}} -extra -w .'
-      - '{{.GCI}} write -s standard -s default -s "prefix(github.com/Vlad777-bit/personal-finance-analytics)" .'
+      - |
+        set -e
+        for module in {{.MODULES}}; do
+          [ -d "$module" ] || continue
+          echo "gofumpt: $module"
+          find "$module" -type f -name '*.go' ! -path '*/mocks/*' ! -path '*/gen/*' -exec {{.GOFUMPT}} -extra -w {} +
+          echo "gci: $module"
+          find "$module" -type f -name '*.go' ! -path '*/mocks/*' ! -path '*/gen/*' -exec {{.GCI}} write -s standard -s default -s 'prefix(github.com/Vlad777-bit/personal-finance-analytics)' {} +
+        done
 
   lint:install:
+    desc: Install golangci-lint into ./bin
     cmds:
       - |
+        set -e
         mkdir -p {{.BIN_DIR}}
-        [ -x {{.GOLANGCI_LINT}} ] || GOBIN={{.BIN_DIR}} go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@{{.GOLANGCI_LINT_VERSION}}
-    status:
-      - test -x {{.GOLANGCI_LINT}}
+        EXPECTED='{{.GOLANGCI_LINT_VERSION}}'
+        CURRENT=''
+        if [ -x {{.GOLANGCI_LINT}} ]; then
+          CURRENT="$({{.GOLANGCI_LINT}} version 2>/dev/null | sed -n 's/.*version \([^ ]*\).*/v\1/p' | head -n1)"
+        fi
+        if [ "$CURRENT" != "$EXPECTED" ]; then
+          echo "Installing golangci-lint $EXPECTED"
+          rm -f {{.GOLANGCI_LINT}}
+          GOBIN={{.BIN_DIR}} go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@${EXPECTED}
+        fi
 
   lint:
+    desc: Run golangci-lint in every workspace module
     deps: [lint:install]
     cmds:
-      - '{{.GOLANGCI_LINT}} run ./... --config=.golangci.yml'
+      - |
+        set -e
+        ERR=0
+        for module in {{.MODULES}}; do
+          [ -f "$module/go.mod" ] || continue
+          if ! (cd "$module" && go list ./... 2>/dev/null | grep -q .); then
+            echo "lint: $module (skip: no Go packages)"
+            continue
+          fi
+          echo "lint: $module"
+          (
+            cd "$module"
+            {{.GOLANGCI_LINT}} run ./... --config=../.golangci.yml
+          ) || ERR=1
+        done
+        exit "$ERR"
 
-  buf:install:
+  deps:update:
+    desc: Sync workspace and tidy every Go module
     cmds:
       - |
+        set -e
+        go work sync
+        for module in {{.MODULES}}; do
+          [ -f "$module/go.mod" ] || continue
+          echo "go mod tidy: $module"
+          (cd "$module" && go mod tidy)
+        done
+
+  buf:install:
+    desc: Install buf into ./bin
+    cmds:
+      - |
+        set -e
         mkdir -p {{.BIN_DIR}}
         [ -x {{.BUF}} ] || GOBIN={{.BIN_DIR}} go install github.com/bufbuild/buf/cmd/buf@v{{.BUF_VERSION}}
     status:
       - test -x {{.BUF}}
 
   proto:install:
+    desc: Install protobuf Go plugins into ./bin
     cmds:
       - |
+        set -e
         mkdir -p {{.BIN_DIR}}
         [ -x {{.PROTOC_GEN_GO}} ] || GOBIN={{.BIN_DIR}} go install google.golang.org/protobuf/cmd/protoc-gen-go@{{.PROTOC_GEN_GO_VERSION}}
         [ -x {{.PROTOC_GEN_GO_GRPC}} ] || GOBIN={{.BIN_DIR}} go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@{{.PROTOC_GEN_GO_GRPC_VERSION}}
@@ -73,60 +129,106 @@ tasks:
       - test -x {{.PROTOC_GEN_GO_GRPC}}
 
   proto:lint:
+    desc: Lint protobuf definitions
     deps: [buf:install]
     dir: shared/proto
     cmds:
       - '{{.BUF}} lint'
 
   proto:gen:
+    desc: Generate Go code from protobuf definitions
     deps: [buf:install, proto:install, proto:lint]
     dir: shared/proto
     cmds:
       - '{{.BUF}} generate'
 
   grpcurl:install:
+    desc: Install grpcurl into ./bin
     cmds:
       - |
+        set -e
         mkdir -p {{.BIN_DIR}}
         [ -x {{.GRPCURL}} ] || GOBIN={{.BIN_DIR}} go install github.com/fullstorydev/grpcurl/cmd/grpcurl@{{.GRPCURL_VERSION}}
     status:
       - test -x {{.GRPCURL}}
 
   mockery:install:
+    desc: Install mockery into ./bin
     cmds:
       - |
+        set -e
         mkdir -p {{.BIN_DIR}}
         [ -x {{.MOCKERY}} ] || GOBIN={{.BIN_DIR}} go install github.com/vektra/mockery/v2@{{.MOCKERY_VERSION}}
     status:
       - test -x {{.MOCKERY}}
 
   mockery:gen:
+    desc: Generate mocks from configured interfaces
     deps: [mockery:install]
     cmds:
       - '{{.MOCKERY}}'
 
   test:
+    desc: Run tests in every workspace module
     cmds:
-      - go test ./...
+      - |
+        set -e
+        for module in {{.MODULES}}; do
+          [ -f "$module/go.mod" ] || continue
+          if ! (cd "$module" && go list ./... 2>/dev/null | grep -q .); then
+            echo "test: $module (skip: no Go packages)"
+            continue
+          fi
+          echo "test: $module"
+          (cd "$module" && go test ./...)
+        done
 
   test:race:
+    desc: Run tests with the race detector in every workspace module
     cmds:
-      - go test -race ./...
+      - |
+        set -e
+        for module in {{.MODULES}}; do
+          [ -f "$module/go.mod" ] || continue
+          if ! (cd "$module" && go list ./... 2>/dev/null | grep -q .); then
+            echo "race: $module (skip: no Go packages)"
+            continue
+          fi
+          echo "race: $module"
+          (cd "$module" && go test -race ./...)
+        done
 
   test:coverage:
+    desc: Build a combined coverage profile for modules that contain packages
     cmds:
-      - mkdir -p coverage
-      - go test ./... -coverprofile=coverage/cover.out
-      - go tool cover -func=coverage/cover.out
-
-  up:
-    cmds:
-      - docker compose up -d
-
-  down:
-    cmds:
-      - docker compose down
+      - |
+        set -e
+        rm -rf coverage
+        mkdir -p coverage
+        echo 'mode: atomic' > coverage/cover.out
+        for module in {{.MODULES}}; do
+          [ -f "$module/go.mod" ] || continue
+          if ! (cd "$module" && go list ./... | grep -q .); then
+            continue
+          fi
+          TMP="{{.ROOT_DIR}}/coverage/${module}.out"
+          (cd "$module" && go test -covermode=atomic -coverprofile="$TMP" ./...)
+          tail -n +2 "$TMP" >> coverage/cover.out
+        done
+        go tool cover -func=coverage/cover.out
 
   gateway:
+    desc: Run Gateway locally
+    dir: gateway
     cmds:
       - go run ./cmd/gateway
+
+  up:
+    desc: Start project infrastructure with Compose
+    cmds:
+      - docker compose -f compose.yaml up -d --build
+
+  down:
+    desc: Stop project infrastructure
+    cmds:
+      - docker compose -f compose.yaml down

@@ -7,8 +7,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/Vlad777-bit/personal-finance-analytics/internal/config"
-	"github.com/Vlad777-bit/personal-finance-analytics/internal/gateway/httpapi"
+	"github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/config"
+	"github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/httpapi"
 )
 
 func main() {
