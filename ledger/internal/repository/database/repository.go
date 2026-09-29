@@ -5,7 +5,10 @@ import (
 	"github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository"
 )
 
-var _ repository.BudgetRepository = (*Repository)(nil)
+var (
+	_ repository.BudgetRepository      = (*Repository)(nil)
+	_ repository.TransactionRepository = (*Repository)(nil)
+)
 
 type Repository struct {
 	db db.DB

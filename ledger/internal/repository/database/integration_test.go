@@ -50,3 +50,22 @@ func cleanupBudget(
 	)
 	require.NoError(t, err)
 }
+
+func cleanupTransactions(
+	t *testing.T,
+	ctx context.Context,
+	db database.DB,
+	userID string,
+) {
+	t.Helper()
+
+	_, err := db.Exec(
+		ctx,
+		`
+			DELETE FROM transactions
+			WHERE user_id = $1
+		`,
+		userID,
+	)
+	require.NoError(t, err)
+}
