@@ -83,6 +83,63 @@ func (_c *BudgetRepository_GetByCategory_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
+// Upsert provides a mock function with given fields: ctx, budget
+func (_m *BudgetRepository) Upsert(ctx context.Context, budget domain.Budget) (domain.Budget, error) {
+	ret := _m.Called(ctx, budget)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Upsert")
+	}
+
+	var r0 domain.Budget
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, domain.Budget) (domain.Budget, error)); ok {
+		return rf(ctx, budget)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, domain.Budget) domain.Budget); ok {
+		r0 = rf(ctx, budget)
+	} else {
+		r0 = ret.Get(0).(domain.Budget)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, domain.Budget) error); ok {
+		r1 = rf(ctx, budget)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// BudgetRepository_Upsert_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Upsert'
+type BudgetRepository_Upsert_Call struct {
+	*mock.Call
+}
+
+// Upsert is a helper method to define mock.On call
+//   - ctx context.Context
+//   - budget domain.Budget
+func (_e *BudgetRepository_Expecter) Upsert(ctx interface{}, budget interface{}) *BudgetRepository_Upsert_Call {
+	return &BudgetRepository_Upsert_Call{Call: _e.mock.On("Upsert", ctx, budget)}
+}
+
+func (_c *BudgetRepository_Upsert_Call) Run(run func(ctx context.Context, budget domain.Budget)) *BudgetRepository_Upsert_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(domain.Budget))
+	})
+	return _c
+}
+
+func (_c *BudgetRepository_Upsert_Call) Return(_a0 domain.Budget, _a1 error) *BudgetRepository_Upsert_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *BudgetRepository_Upsert_Call) RunAndReturn(run func(context.Context, domain.Budget) (domain.Budget, error)) *BudgetRepository_Upsert_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewBudgetRepository creates a new instance of BudgetRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewBudgetRepository(t interface {

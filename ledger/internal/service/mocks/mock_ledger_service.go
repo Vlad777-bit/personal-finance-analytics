@@ -26,6 +26,63 @@ func (_m *LedgerService) EXPECT() *LedgerService_Expecter {
 	return &LedgerService_Expecter{mock: &_m.Mock}
 }
 
+// CreateBudget provides a mock function with given fields: ctx, input
+func (_m *LedgerService) CreateBudget(ctx context.Context, input service.CreateBudgetInput) (domain.Budget, error) {
+	ret := _m.Called(ctx, input)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateBudget")
+	}
+
+	var r0 domain.Budget
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, service.CreateBudgetInput) (domain.Budget, error)); ok {
+		return rf(ctx, input)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, service.CreateBudgetInput) domain.Budget); ok {
+		r0 = rf(ctx, input)
+	} else {
+		r0 = ret.Get(0).(domain.Budget)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, service.CreateBudgetInput) error); ok {
+		r1 = rf(ctx, input)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// LedgerService_CreateBudget_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateBudget'
+type LedgerService_CreateBudget_Call struct {
+	*mock.Call
+}
+
+// CreateBudget is a helper method to define mock.On call
+//   - ctx context.Context
+//   - input service.CreateBudgetInput
+func (_e *LedgerService_Expecter) CreateBudget(ctx interface{}, input interface{}) *LedgerService_CreateBudget_Call {
+	return &LedgerService_CreateBudget_Call{Call: _e.mock.On("CreateBudget", ctx, input)}
+}
+
+func (_c *LedgerService_CreateBudget_Call) Run(run func(ctx context.Context, input service.CreateBudgetInput)) *LedgerService_CreateBudget_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(service.CreateBudgetInput))
+	})
+	return _c
+}
+
+func (_c *LedgerService_CreateBudget_Call) Return(_a0 domain.Budget, _a1 error) *LedgerService_CreateBudget_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *LedgerService_CreateBudget_Call) RunAndReturn(run func(context.Context, service.CreateBudgetInput) (domain.Budget, error)) *LedgerService_CreateBudget_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CreateTransaction provides a mock function with given fields: ctx, input
 func (_m *LedgerService) CreateTransaction(ctx context.Context, input service.CreateTransactionInput) (domain.Transaction, error) {
 	ret := _m.Called(ctx, input)

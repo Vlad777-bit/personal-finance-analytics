@@ -28,4 +28,9 @@ type BudgetRepository interface {
 		userID string,
 		category string,
 	) (domain.Budget, error)
+
+	Upsert(
+		ctx context.Context,
+		budget domain.Budget,
+	) (domain.Budget, error)
 }
