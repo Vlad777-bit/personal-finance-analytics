@@ -1,0 +1,8 @@
+.env
+bin/*
+!bin/.gitkeep
+coverage/
+*.out
+.idea/
+.vscode/
+.DS_Store

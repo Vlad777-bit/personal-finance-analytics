@@ -1,0 +1,22 @@
+with-expecter: true
+boilerplate-file: ".mockery_boilerplate_text.txt"
+dir: "{{.InterfaceDir}}/mocks"
+filename: "mock_{{.InterfaceNameSnake}}.go"
+outpkg: "mocks"
+mockname: "{{.InterfaceName}}"
+resolve-type-alias: false
+issue-845-fix: true
+
+packages:
+  github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/service:
+    config:
+      include-regex: ".*Service"
+  github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository:
+    config:
+      include-regex: ".*Repository"
+  github.com/Vlad777-bit/personal-finance-analytics/auth/internal/service:
+    config:
+      include-regex: ".*Service"
+  github.com/Vlad777-bit/personal-finance-analytics/auth/internal/repository:
+    config:
+      include-regex: ".*Repository"

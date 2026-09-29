@@ -1,0 +1,2 @@
+// Code generated for VlaDDoS service
+// © VlaDDoS 2026.
