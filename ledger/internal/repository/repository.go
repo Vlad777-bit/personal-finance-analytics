@@ -20,6 +20,18 @@ type TransactionRepository interface {
 		from time.Time,
 		to time.Time,
 	) (int64, error)
+
+	List(
+		ctx context.Context,
+		filter TransactionFilter,
+	) ([]domain.Transaction, error)
+}
+
+type TransactionFilter struct {
+	UserID   string
+	Category string
+	From     time.Time
+	To       time.Time
 }
 
 type BudgetRepository interface {

@@ -9,6 +9,7 @@ import (
 	context "context"
 
 	domain "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/domain"
+	repository "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository"
 	mock "github.com/stretchr/testify/mock"
 
 	time "time"
@@ -81,6 +82,47 @@ func (_c *TransactionRepository_Create_Call) Return(_a0 domain.Transaction, _a1 
 
 func (_c *TransactionRepository_Create_Call) RunAndReturn(run func(context.Context, domain.Transaction) (domain.Transaction, error)) *TransactionRepository_Create_Call {
 	_c.Call.Return(run)
+	return _c
+}
+
+// List provides a mock function with given fields: ctx, filter
+func (_m *TransactionRepository) List(ctx context.Context, filter repository.TransactionFilter) ([]domain.Transaction, error) {
+	ret := _m.Called(ctx, filter)
+
+	if len(ret) == 0 {
+		panic("no return value specified for List")
+	}
+
+	var r0 []domain.Transaction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, repository.TransactionFilter) ([]domain.Transaction, error)); ok {
+		return rf(ctx, filter)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, repository.TransactionFilter) []domain.Transaction); ok {
+		r0 = rf(ctx, filter)
+	} else if ret.Get(0) != nil {
+		r0 = ret.Get(0).([]domain.Transaction)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, repository.TransactionFilter) error); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+type TransactionRepository_List_Call struct {
+	*mock.Call
+}
+
+func (_e *TransactionRepository_Expecter) List(ctx interface{}, filter interface{}) *TransactionRepository_List_Call {
+	return &TransactionRepository_List_Call{Call: _e.mock.On("List", ctx, filter)}
+}
+
+func (_c *TransactionRepository_List_Call) Return(_a0 []domain.Transaction, _a1 error) *TransactionRepository_List_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 

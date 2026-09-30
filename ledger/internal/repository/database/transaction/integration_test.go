@@ -11,6 +11,7 @@ import (
 
 	dbpgx "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/database/pgx"
 	"github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/domain"
+	repositorypkg "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository"
 	"github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository/database/testhelper"
 	transactionrepository "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository/database/transaction"
 )
@@ -143,5 +144,60 @@ func TestTransactionRepository(t *testing.T) {
 		require.NoError(t, sumErr)
 
 		require.Zero(t, total)
+	})
+
+	t.Run("list transactions by period and optional category", func(t *testing.T) {
+		otherCategoryDate := transactionDate.AddDate(0, 0, 2)
+		_, createErr := repository.Create(
+			ctx,
+			domain.Transaction{
+				UserID:      userID,
+				Amount:      3000,
+				Category:    "transport",
+				Description: "taxi",
+				OccurredAt:  otherCategoryDate,
+			},
+		)
+		require.NoError(t, createErr)
+
+		from := time.Date(2026, time.September, 1, 0, 0, 0, 0, time.UTC)
+		to := from.AddDate(0, 1, 0)
+
+		all, listErr := repository.List(ctx, repositorypkg.TransactionFilter{
+			UserID: userID,
+			From:   from,
+			To:     to,
+		})
+		require.NoError(t, listErr)
+		require.Len(t, all, 3)
+		require.Equal(t, "transport", all[0].Category)
+
+		food, listErr := repository.List(ctx, repositorypkg.TransactionFilter{
+			UserID:   userID,
+			Category: category,
+			From:     from,
+			To:       to,
+		})
+		require.NoError(t, listErr)
+		require.Len(t, food, 2)
+		for _, transaction := range food {
+			require.Equal(t, category, transaction.Category)
+		}
+	})
+
+	t.Run("list returns empty slice when transactions not found", func(t *testing.T) {
+		from := time.Date(2027, time.January, 1, 0, 0, 0, 0, time.UTC)
+
+		transactions, listErr := repository.List(
+			ctx,
+			repositorypkg.TransactionFilter{
+				UserID: userID,
+				From:   from,
+				To:     from.AddDate(0, 1, 0),
+			},
+		)
+		require.NoError(t, listErr)
+		require.Empty(t, transactions)
+		require.NotNil(t, transactions)
 	})
 }

@@ -8,6 +8,7 @@ var (
 	ErrInvalidAmount    = errors.New("amount must be greater than zero")
 	ErrInvalidBudget    = errors.New("budget limit must be greater than zero")
 	ErrDateRequired     = errors.New("transaction date is required")
+	ErrInvalidPeriod    = errors.New("period start must be before period end")
 
 	ErrBudgetNotFound = errors.New("budget not found")
 	ErrBudgetExceeded = errors.New("budget exceeded")

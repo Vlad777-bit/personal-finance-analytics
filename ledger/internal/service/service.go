@@ -20,6 +20,11 @@ type LedgerService interface {
 		ctx context.Context,
 		input CreateBudgetInput,
 	) (domain.Budget, error)
+
+	GetTransactions(
+		ctx context.Context,
+		input GetTransactionsInput,
+	) ([]domain.Transaction, error)
 }
 
 type CreateTransactionInput struct {
@@ -34,6 +39,13 @@ type CreateBudgetInput struct {
 	UserID   string
 	Category string
 	Limit    int64
+}
+
+type GetTransactionsInput struct {
+	UserID   string
+	Category string
+	From     time.Time
+	To       time.Time
 }
 
 type service struct {

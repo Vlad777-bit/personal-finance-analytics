@@ -21,6 +21,10 @@ type row struct {
 	row pgxdriver.Row
 }
 
+type rows struct {
+	rows pgxdriver.Rows
+}
+
 func New(
 	ctx context.Context,
 	dsn string,
@@ -51,6 +55,19 @@ func (c *Client) QueryRow(
 	}
 }
 
+func (c *Client) Query(
+	ctx context.Context,
+	query string,
+	args ...any,
+) (database.Rows, error) {
+	result, err := c.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("query rows: %w", err)
+	}
+
+	return &rows{rows: result}, nil
+}
+
 func (c *Client) Close() {
 	c.pool.Close()
 }
@@ -66,4 +83,28 @@ func (r *row) Scan(dest ...any) error {
 	}
 
 	return nil
+}
+
+func (r *rows) Next() bool {
+	return r.rows.Next()
+}
+
+func (r *rows) Scan(dest ...any) error {
+	if err := r.rows.Scan(dest...); err != nil {
+		return fmt.Errorf("scan row: %w", err)
+	}
+
+	return nil
+}
+
+func (r *rows) Err() error {
+	if err := r.rows.Err(); err != nil {
+		return fmt.Errorf("iterate rows: %w", err)
+	}
+
+	return nil
+}
+
+func (r *rows) Close() {
+	r.rows.Close()
 }
