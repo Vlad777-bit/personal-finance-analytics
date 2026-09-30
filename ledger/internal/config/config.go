@@ -11,12 +11,14 @@ import (
 
 const (
 	defaultShutdownTimeout = 10 * time.Second
+	defaultGRPCAddress     = ":9090"
 )
 
 var dotEnvFiles = []string{".env", "../.env"}
 
 type Config struct {
 	DatabaseURL     string
+	GRPCAddress     string
 	ShutdownTimeout time.Duration
 }
 
@@ -51,8 +53,17 @@ func Load() (Config, error) {
 
 	return Config{
 		DatabaseURL:     databaseURL,
+		GRPCAddress:     envOrDefault("LEDGER_GRPC_ADDR", defaultGRPCAddress),
 		ShutdownTimeout: shutdownTimeout,
 	}, nil
+}
+
+func envOrDefault(key, fallback string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+
+	return fallback
 }
 
 func loadDotEnv(filenames ...string) error {

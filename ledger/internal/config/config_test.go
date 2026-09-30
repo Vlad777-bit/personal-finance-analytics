@@ -13,6 +13,7 @@ func TestLoad(t *testing.T) {
 	tests := []struct {
 		name            string
 		databaseURL     string
+		grpcAddress     string
 		shutdownTimeout string
 		want            Config
 		wantError       bool
@@ -22,6 +23,7 @@ func TestLoad(t *testing.T) {
 			databaseURL: "postgres://finance:finance@localhost:5432/finance",
 			want: Config{
 				DatabaseURL:     "postgres://finance:finance@localhost:5432/finance",
+				GRPCAddress:     ":9090",
 				ShutdownTimeout: 10 * time.Second,
 			},
 		},
@@ -31,7 +33,18 @@ func TestLoad(t *testing.T) {
 			shutdownTimeout: "3s",
 			want: Config{
 				DatabaseURL:     "postgres://finance:finance@localhost:5432/finance",
+				GRPCAddress:     ":9090",
 				ShutdownTimeout: 3 * time.Second,
+			},
+		},
+		{
+			name:        "custom gRPC address",
+			databaseURL: "postgres://finance:finance@localhost:5432/finance",
+			grpcAddress: "127.0.0.1:19090",
+			want: Config{
+				DatabaseURL:     "postgres://finance:finance@localhost:5432/finance",
+				GRPCAddress:     "127.0.0.1:19090",
+				ShutdownTimeout: 10 * time.Second,
 			},
 		},
 		{
@@ -55,6 +68,7 @@ func TestLoad(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Setenv("LEDGER_DATABASE_URL", test.databaseURL)
+			t.Setenv("LEDGER_GRPC_ADDR", test.grpcAddress)
 			t.Setenv("LEDGER_SHUTDOWN_TIMEOUT", test.shutdownTimeout)
 
 			got, err := Load()

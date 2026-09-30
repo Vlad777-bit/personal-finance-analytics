@@ -32,15 +32,22 @@ func run() int {
 	)
 	defer stop()
 
-	application, err := app.New(signalContext, cfg.DatabaseURL)
+	application, err := app.New(
+		signalContext,
+		cfg.DatabaseURL,
+		cfg.GRPCAddress,
+	)
 	if err != nil {
 		logger.Error("initialize ledger application", "error", err)
 
 		return 1
 	}
 
-	logger.Info("ledger service started")
-	<-signalContext.Done()
+	logger.Info("ledger service started", "grpc_addr", cfg.GRPCAddress)
+	runErr := application.Run(signalContext)
+	if runErr != nil {
+		logger.Error("run ledger application", "error", runErr)
+	}
 	logger.Info("ledger service stopping")
 
 	shutdownContext, cancel := context.WithTimeout(
@@ -56,6 +63,9 @@ func run() int {
 	}
 
 	logger.Info("ledger service stopped")
+	if runErr != nil {
+		return 1
+	}
 
 	return 0
 }

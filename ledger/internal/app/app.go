@@ -3,22 +3,28 @@ package app
 import (
 	"context"
 	"fmt"
+	"net"
+
+	"google.golang.org/grpc"
 
 	dbpgx "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/database/pgx"
 	budgetrepository "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository/database/budget"
 	transactionrepository "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository/database/transaction"
 	"github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/service"
+	grpctransport "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/transport/grpc"
+	ledgerv1 "github.com/Vlad777-bit/personal-finance-analytics/shared/gen/go/ledger/v1"
 )
 
 type App struct {
 	database *dbpgx.Client
-
-	service service.LedgerService
+	server   *grpc.Server
+	listener net.Listener
 }
 
 func New(
 	ctx context.Context,
 	databaseURL string,
+	grpcAddress string,
 ) (*App, error) {
 	databaseClient, err := dbpgx.New(ctx, databaseURL)
 	if err != nil {
@@ -37,29 +43,60 @@ func New(
 		transactionRepository,
 		budgetRepository,
 	)
+	grpcServer := grpc.NewServer()
+	ledgerv1.RegisterLedgerServiceServer(
+		grpcServer,
+		grpctransport.New(ledgerService),
+	)
+
+	listener, err := net.Listen("tcp", grpcAddress)
+	if err != nil {
+		databaseClient.Close()
+
+		return nil, fmt.Errorf("listen for gRPC connections: %w", err)
+	}
 
 	return &App{
 		database: databaseClient,
-		service:  ledgerService,
+		server:   grpcServer,
+		listener: listener,
 	}, nil
 }
 
-func (a *App) Close() {
-	a.database.Close()
+func (a *App) Run(ctx context.Context) error {
+	serveError := make(chan error, 1)
+
+	go func() {
+		serveError <- a.server.Serve(a.listener)
+	}()
+
+	select {
+	case <-ctx.Done():
+		return nil
+	case err := <-serveError:
+		return fmt.Errorf("serve gRPC: %w", err)
+	}
 }
 
 func (a *App) Shutdown(ctx context.Context) error {
 	done := make(chan struct{})
 
 	go func() {
-		a.Close()
+		a.server.GracefulStop()
 		close(done)
 	}()
 
 	select {
 	case <-done:
-		return nil
 	case <-ctx.Done():
-		return fmt.Errorf("shutdown ledger application: %w", ctx.Err())
+		a.server.Stop()
+		<-done
+		a.database.Close()
+
+		return fmt.Errorf("shutdown gRPC server: %w", ctx.Err())
 	}
+
+	a.database.Close()
+
+	return nil
 }
