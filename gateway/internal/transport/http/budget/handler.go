@@ -2,17 +2,12 @@ package budget
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
-	"io"
 	"net/http"
 	"strings"
 
 	ledgerclient "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/client/ledger"
 	httptransport "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http"
 )
-
-const maxRequestBodySize = 1 << 20
 
 type LedgerClient interface {
 	CreateBudget(
@@ -42,7 +37,8 @@ func NewHandler(client LedgerClient) *Handler {
 }
 
 func (h *Handler) Upsert(w http.ResponseWriter, r *http.Request) {
-	request, err := decodeUpsertRequest(w, r)
+	var request upsertRequest
+	err := httptransport.DecodeJSON(w, r, &request)
 	if err != nil {
 		httptransport.WriteError(w, http.StatusBadRequest, "invalid_request", err.Error())
 
@@ -81,24 +77,4 @@ func (h *Handler) Upsert(w http.ResponseWriter, r *http.Request) {
 		Category: createdBudget.Category,
 		Limit:    createdBudget.Limit,
 	})
-}
-
-func decodeUpsertRequest(
-	w http.ResponseWriter,
-	r *http.Request,
-) (upsertRequest, error) {
-	r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodySize)
-	decoder := json.NewDecoder(r.Body)
-	decoder.DisallowUnknownFields()
-
-	var request upsertRequest
-	if err := decoder.Decode(&request); err != nil {
-		return upsertRequest{}, errors.New("request body must contain valid JSON")
-	}
-
-	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
-		return upsertRequest{}, errors.New("request body must contain a single JSON object")
-	}
-
-	return request, nil
 }
