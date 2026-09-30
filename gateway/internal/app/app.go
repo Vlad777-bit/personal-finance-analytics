@@ -9,6 +9,7 @@ import (
 
 	ledgerclient "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/client/ledger"
 	httptransport "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http"
+	budgettransport "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http/budget"
 )
 
 type App struct {
@@ -30,11 +31,14 @@ func New(
 	if err != nil {
 		return nil, fmt.Errorf("create Ledger client: %w", err)
 	}
+	budgetHandler := budgettransport.NewHandler(ledgerClient)
+	router := httptransport.NewRouter()
+	router.HandleFunc("PUT /budgets/{category}", budgetHandler.Upsert)
 
 	return &App{
 		server: &http.Server{
 			Addr:              httpAddress,
-			Handler:           httptransport.NewRouter(),
+			Handler:           router,
 			ReadHeaderTimeout: 5 * time.Second,
 		},
 		ledgerClient: ledgerClient,

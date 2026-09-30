@@ -9,7 +9,7 @@ type healthResponse struct {
 	Status string `json:"status"`
 }
 
-func NewRouter() http.Handler {
+func NewRouter() *http.ServeMux {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /ping", func(w http.ResponseWriter, _ *http.Request) {
