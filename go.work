@@ -3,6 +3,7 @@ go 1.26
 use (
 	./auth
 	./gateway
+	./integration
 	./ledger
 	./shared
 )

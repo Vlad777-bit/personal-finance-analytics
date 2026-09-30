@@ -2,7 +2,7 @@ version: '3'
 
 vars:
   GO_VERSION: '1.26'
-  MODULES: 'gateway ledger auth shared'
+  MODULES: 'gateway ledger auth shared integration'
 
   GOLANGCI_LINT_VERSION: 'v2.14.0'
   GCI_VERSION: 'v0.13.6'
@@ -263,6 +263,17 @@ tasks:
             ./internal/repository/database/...
         )
 
+        echo "🧪 Running HTTP end-to-end integration tests..."
+
+        (
+          cd integration
+          go test \
+            -tags=integration \
+            -count=1 \
+            -v \
+            ./...
+        )
+
 
 
   gateway:
@@ -420,4 +431,3 @@ tasks:
           down -v
 
         echo "✅ Migration reverted"
-
