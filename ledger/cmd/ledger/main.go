@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log/slog"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -31,11 +32,12 @@ func run() int {
 		syscall.SIGTERM,
 	)
 	defer stop()
+	grpcAddress := net.JoinHostPort("", cfg.GRPCPort)
 
 	application, err := app.New(
 		signalContext,
 		cfg.DatabaseURL,
-		cfg.GRPCAddress,
+		grpcAddress,
 	)
 	if err != nil {
 		logger.Error("initialize ledger application", "error", err)
@@ -43,7 +45,7 @@ func run() int {
 		return 1
 	}
 
-	logger.Info("ledger service started", "grpc_addr", cfg.GRPCAddress)
+	logger.Info("ledger service started", "grpc_addr", grpcAddress)
 	runErr := application.Run(signalContext)
 	if runErr != nil {
 		logger.Error("run ledger application", "error", runErr)

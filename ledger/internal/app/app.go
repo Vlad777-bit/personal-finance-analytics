@@ -6,6 +6,7 @@ import (
 	"net"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
 	dbpgx "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/database/pgx"
 	budgetrepository "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository/database/budget"
@@ -48,6 +49,7 @@ func New(
 		grpcServer,
 		grpctransport.New(ledgerService),
 	)
+	reflection.Register(grpcServer)
 
 	listener, err := net.Listen("tcp", grpcAddress)
 	if err != nil {

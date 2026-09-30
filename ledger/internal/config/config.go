@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -11,14 +12,14 @@ import (
 
 const (
 	defaultShutdownTimeout = 10 * time.Second
-	defaultGRPCAddress     = ":9090"
+	defaultGRPCPort        = "9090"
 )
 
 var dotEnvFiles = []string{".env", "../.env"}
 
 type Config struct {
 	DatabaseURL     string
-	GRPCAddress     string
+	GRPCPort        string
 	ShutdownTimeout time.Duration
 }
 
@@ -30,6 +31,15 @@ func Load() (Config, error) {
 	databaseURL := os.Getenv("LEDGER_DATABASE_URL")
 	if databaseURL == "" {
 		return Config{}, errors.New("LEDGER_DATABASE_URL is required")
+	}
+
+	grpcPort := envOrDefault("LEDGER_GRPC_PORT", defaultGRPCPort)
+	parsedGRPCPort, err := strconv.ParseUint(grpcPort, 10, 16)
+	if err != nil || parsedGRPCPort == 0 {
+		return Config{}, fmt.Errorf(
+			"LEDGER_GRPC_PORT must be a number between 1 and 65535: %q",
+			grpcPort,
+		)
 	}
 
 	shutdownTimeout := defaultShutdownTimeout
@@ -53,7 +63,7 @@ func Load() (Config, error) {
 
 	return Config{
 		DatabaseURL:     databaseURL,
-		GRPCAddress:     envOrDefault("LEDGER_GRPC_ADDR", defaultGRPCAddress),
+		GRPCPort:        grpcPort,
 		ShutdownTimeout: shutdownTimeout,
 	}, nil
 }

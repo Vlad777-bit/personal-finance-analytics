@@ -13,7 +13,7 @@ func TestLoad(t *testing.T) {
 	tests := []struct {
 		name            string
 		databaseURL     string
-		grpcAddress     string
+		grpcPort        string
 		shutdownTimeout string
 		want            Config
 		wantError       bool
@@ -23,7 +23,7 @@ func TestLoad(t *testing.T) {
 			databaseURL: "postgres://finance:finance@localhost:5432/finance",
 			want: Config{
 				DatabaseURL:     "postgres://finance:finance@localhost:5432/finance",
-				GRPCAddress:     ":9090",
+				GRPCPort:        "9090",
 				ShutdownTimeout: 10 * time.Second,
 			},
 		},
@@ -33,19 +33,37 @@ func TestLoad(t *testing.T) {
 			shutdownTimeout: "3s",
 			want: Config{
 				DatabaseURL:     "postgres://finance:finance@localhost:5432/finance",
-				GRPCAddress:     ":9090",
+				GRPCPort:        "9090",
 				ShutdownTimeout: 3 * time.Second,
 			},
 		},
 		{
-			name:        "custom gRPC address",
+			name:        "custom gRPC port",
 			databaseURL: "postgres://finance:finance@localhost:5432/finance",
-			grpcAddress: "127.0.0.1:19090",
+			grpcPort:    "19090",
 			want: Config{
 				DatabaseURL:     "postgres://finance:finance@localhost:5432/finance",
-				GRPCAddress:     "127.0.0.1:19090",
+				GRPCPort:        "19090",
 				ShutdownTimeout: 10 * time.Second,
 			},
+		},
+		{
+			name:        "non-numeric gRPC port",
+			databaseURL: "postgres://finance:finance@localhost:5432/finance",
+			grpcPort:    "grpc",
+			wantError:   true,
+		},
+		{
+			name:        "zero gRPC port",
+			databaseURL: "postgres://finance:finance@localhost:5432/finance",
+			grpcPort:    "0",
+			wantError:   true,
+		},
+		{
+			name:        "out of range gRPC port",
+			databaseURL: "postgres://finance:finance@localhost:5432/finance",
+			grpcPort:    "65536",
+			wantError:   true,
 		},
 		{
 			name:      "missing database URL",
@@ -68,7 +86,7 @@ func TestLoad(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Setenv("LEDGER_DATABASE_URL", test.databaseURL)
-			t.Setenv("LEDGER_GRPC_ADDR", test.grpcAddress)
+			t.Setenv("LEDGER_GRPC_PORT", test.grpcPort)
 			t.Setenv("LEDGER_SHUTDOWN_TIMEOUT", test.shutdownTimeout)
 
 			got, err := Load()
