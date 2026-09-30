@@ -16,6 +16,7 @@ const (
 	defaultLedgerGRPCHost    = "localhost"
 	defaultLedgerGRPCPort    = "9090"
 	defaultLedgerDialTimeout = 5 * time.Second
+	defaultShutdownTimeout   = 10 * time.Second
 )
 
 var dotEnvFiles = []string{".env", "../.env"}
@@ -25,6 +26,7 @@ type Config struct {
 	LedgerGRPCHost        string
 	LedgerGRPCPort        string
 	LedgerGRPCDialTimeout time.Duration
+	ShutdownTimeout       time.Duration
 }
 
 func (c Config) LedgerGRPCAddress() string {
@@ -63,11 +65,30 @@ func Load() (Config, error) {
 		ledgerDialTimeout = parsedTimeout
 	}
 
+	shutdownTimeout := defaultShutdownTimeout
+	if value := os.Getenv("GATEWAY_SHUTDOWN_TIMEOUT"); value != "" {
+		parsedTimeout, parseErr := time.ParseDuration(value)
+		if parseErr != nil {
+			return Config{}, fmt.Errorf(
+				"parse GATEWAY_SHUTDOWN_TIMEOUT: %w",
+				parseErr,
+			)
+		}
+		if parsedTimeout <= 0 {
+			return Config{}, errors.New(
+				"GATEWAY_SHUTDOWN_TIMEOUT must be positive",
+			)
+		}
+
+		shutdownTimeout = parsedTimeout
+	}
+
 	return Config{
 		GatewayHTTPAddr:       envOrDefault("GATEWAY_HTTP_ADDR", defaultHTTPAddress),
 		LedgerGRPCHost:        envOrDefault("LEDGER_GRPC_HOST", defaultLedgerGRPCHost),
 		LedgerGRPCPort:        ledgerGRPCPort,
 		LedgerGRPCDialTimeout: ledgerDialTimeout,
+		ShutdownTimeout:       shutdownTimeout,
 	}, nil
 }
 
