@@ -5,11 +5,15 @@ import (
 	"fmt"
 	"os"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 const (
 	defaultShutdownTimeout = 10 * time.Second
 )
+
+var dotEnvFiles = []string{".env", "../.env"}
 
 type Config struct {
 	DatabaseURL     string
@@ -17,6 +21,10 @@ type Config struct {
 }
 
 func Load() (Config, error) {
+	if err := loadDotEnv(dotEnvFiles...); err != nil {
+		return Config{}, err
+	}
+
 	databaseURL := os.Getenv("LEDGER_DATABASE_URL")
 	if databaseURL == "" {
 		return Config{}, errors.New("LEDGER_DATABASE_URL is required")
@@ -32,6 +40,11 @@ func Load() (Config, error) {
 				err,
 			)
 		}
+		if parsedTimeout <= 0 {
+			return Config{}, errors.New(
+				"LEDGER_SHUTDOWN_TIMEOUT must be positive",
+			)
+		}
 
 		shutdownTimeout = parsedTimeout
 	}
@@ -40,4 +53,25 @@ func Load() (Config, error) {
 		DatabaseURL:     databaseURL,
 		ShutdownTimeout: shutdownTimeout,
 	}, nil
+}
+
+func loadDotEnv(filenames ...string) error {
+	for _, filename := range filenames {
+		_, err := os.Stat(filename)
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				continue
+			}
+
+			return fmt.Errorf("stat dotenv file %s: %w", filename, err)
+		}
+
+		if err := godotenv.Load(filename); err != nil {
+			return fmt.Errorf("load dotenv file %s: %w", filename, err)
+		}
+
+		return nil
+	}
+
+	return nil
 }

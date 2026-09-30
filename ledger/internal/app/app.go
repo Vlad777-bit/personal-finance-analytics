@@ -47,3 +47,19 @@ func New(
 func (a *App) Close() {
 	a.database.Close()
 }
+
+func (a *App) Shutdown(ctx context.Context) error {
+	done := make(chan struct{})
+
+	go func() {
+		a.Close()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		return nil
+	case <-ctx.Done():
+		return fmt.Errorf("shutdown ledger application: %w", ctx.Err())
+	}
+}
