@@ -2,7 +2,6 @@ package ledger
 
 import (
 	"context"
-	"errors"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -27,24 +26,5 @@ func (c *Client) CreateTransaction(
 		return Transaction{}, mapError(err)
 	}
 
-	transaction := response.GetTransaction()
-	if transaction == nil {
-		return Transaction{}, ErrInvalidResponse
-	}
-	if transaction.GetOccurredAt() == nil || transaction.GetCreatedAt() == nil {
-		return Transaction{}, errors.Join(
-			ErrInvalidResponse,
-			errors.New("transaction timestamps are required"),
-		)
-	}
-
-	return Transaction{
-		ID:          transaction.GetId(),
-		UserID:      transaction.GetUserId(),
-		Amount:      transaction.GetAmount(),
-		Category:    transaction.GetCategory(),
-		Description: transaction.GetDescription(),
-		OccurredAt:  transaction.GetOccurredAt().AsTime(),
-		CreatedAt:   transaction.GetCreatedAt().AsTime(),
-	}, nil
+	return transactionFromProto(response.GetTransaction())
 }

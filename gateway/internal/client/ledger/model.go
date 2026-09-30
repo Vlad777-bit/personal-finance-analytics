@@ -1,6 +1,11 @@
 package ledger
 
-import "time"
+import (
+	"errors"
+	"time"
+
+	ledgerv1 "github.com/Vlad777-bit/personal-finance-analytics/shared/gen/go/ledger/v1"
+)
 
 type CreateTransactionInput struct {
 	UserID      string
@@ -20,6 +25,13 @@ type Transaction struct {
 	CreatedAt   time.Time
 }
 
+type GetTransactionsInput struct {
+	UserID   string
+	Category string
+	From     time.Time
+	To       time.Time
+}
+
 type CreateBudgetInput struct {
 	UserID   string
 	Category string
@@ -31,4 +43,26 @@ type Budget struct {
 	UserID   string
 	Category string
 	Limit    int64
+}
+
+func transactionFromProto(transaction *ledgerv1.Transaction) (Transaction, error) {
+	if transaction == nil {
+		return Transaction{}, ErrInvalidResponse
+	}
+	if transaction.GetOccurredAt() == nil || transaction.GetCreatedAt() == nil {
+		return Transaction{}, errors.Join(
+			ErrInvalidResponse,
+			errors.New("transaction timestamps are required"),
+		)
+	}
+
+	return Transaction{
+		ID:          transaction.GetId(),
+		UserID:      transaction.GetUserId(),
+		Amount:      transaction.GetAmount(),
+		Category:    transaction.GetCategory(),
+		Description: transaction.GetDescription(),
+		OccurredAt:  transaction.GetOccurredAt().AsTime(),
+		CreatedAt:   transaction.GetCreatedAt().AsTime(),
+	}, nil
 }

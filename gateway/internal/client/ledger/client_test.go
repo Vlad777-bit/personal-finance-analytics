@@ -24,6 +24,10 @@ type fakeLedgerServiceClient struct {
 		context.Context,
 		*ledgerv1.CreateBudgetRequest,
 	) (*ledgerv1.CreateBudgetResponse, error)
+	getTransactions func(
+		context.Context,
+		*ledgerv1.GetTransactionsRequest,
+	) (*ledgerv1.GetTransactionsResponse, error)
 }
 
 func (f *fakeLedgerServiceClient) CreateTransaction(
@@ -43,11 +47,11 @@ func (f *fakeLedgerServiceClient) CreateBudget(
 }
 
 func (f *fakeLedgerServiceClient) GetTransactions(
-	context.Context,
-	*ledgerv1.GetTransactionsRequest,
-	...grpc.CallOption,
+	ctx context.Context,
+	request *ledgerv1.GetTransactionsRequest,
+	_ ...grpc.CallOption,
 ) (*ledgerv1.GetTransactionsResponse, error) {
-	panic("unexpected GetTransactions call")
+	return f.getTransactions(ctx, request)
 }
 
 func TestClient_CreateTransaction(t *testing.T) {
@@ -111,6 +115,102 @@ func TestClient_CreateBudget(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "budget-1", budget.ID)
 	require.Equal(t, int64(50000), budget.Limit)
+}
+
+func TestClient_GetTransactions(t *testing.T) {
+	t.Parallel()
+
+	from := time.Date(2026, time.September, 1, 0, 0, 0, 0, time.UTC)
+	to := from.AddDate(0, 1, 0)
+	createdAt := from.Add(time.Hour)
+
+	tests := []struct {
+		name    string
+		call    func(*testing.T, *ledgerv1.GetTransactionsRequest) (*ledgerv1.GetTransactionsResponse, error)
+		want    []Transaction
+		wantErr error
+	}{
+		{
+			name: "success",
+			call: func(t *testing.T, request *ledgerv1.GetTransactionsRequest) (*ledgerv1.GetTransactionsResponse, error) {
+				t.Helper()
+				require.Equal(t, "user-1", request.GetUserId())
+				require.Equal(t, "food", request.GetCategory())
+				require.True(t, request.GetFrom().AsTime().Equal(from))
+				require.True(t, request.GetTo().AsTime().Equal(to))
+
+				return &ledgerv1.GetTransactionsResponse{
+					Transactions: []*ledgerv1.Transaction{
+						{
+							Id: "transaction-1", UserId: "user-1", Amount: 1500,
+							Category: "food", Description: "lunch",
+							OccurredAt: timestamppb.New(from),
+							CreatedAt:  timestamppb.New(createdAt),
+						},
+					},
+				}, nil
+			},
+			want: []Transaction{
+				{
+					ID: "transaction-1", UserID: "user-1", Amount: 1500,
+					Category: "food", Description: "lunch",
+					OccurredAt: from, CreatedAt: createdAt,
+				},
+			},
+		},
+		{
+			name: "empty result",
+			call: func(_ *testing.T, _ *ledgerv1.GetTransactionsRequest) (*ledgerv1.GetTransactionsResponse, error) {
+				return &ledgerv1.GetTransactionsResponse{}, nil
+			},
+			want: []Transaction{},
+		},
+		{
+			name: "grpc error",
+			call: func(_ *testing.T, _ *ledgerv1.GetTransactionsRequest) (*ledgerv1.GetTransactionsResponse, error) {
+				return nil, status.Error(codes.InvalidArgument, "invalid period")
+			},
+			wantErr: ErrInvalidArgument,
+		},
+		{
+			name: "nil response",
+			call: func(_ *testing.T, _ *ledgerv1.GetTransactionsRequest) (*ledgerv1.GetTransactionsResponse, error) {
+				return nil, nil
+			},
+			wantErr: ErrInvalidResponse,
+		},
+		{
+			name: "invalid transaction",
+			call: func(_ *testing.T, _ *ledgerv1.GetTransactionsRequest) (*ledgerv1.GetTransactionsResponse, error) {
+				return &ledgerv1.GetTransactionsResponse{
+					Transactions: []*ledgerv1.Transaction{nil},
+				}, nil
+			},
+			wantErr: ErrInvalidResponse,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			client := &Client{service: &fakeLedgerServiceClient{
+				getTransactions: func(
+					_ context.Context,
+					request *ledgerv1.GetTransactionsRequest,
+				) (*ledgerv1.GetTransactionsResponse, error) {
+					return tt.call(t, request)
+				},
+			}}
+
+			got, err := client.GetTransactions(t.Context(), GetTransactionsInput{
+				UserID: "user-1", Category: "food", From: from, To: to,
+			})
+
+			require.ErrorIs(t, err, tt.wantErr)
+			require.Equal(t, tt.want, got)
+		})
+	}
 }
 
 func TestMapError(t *testing.T) {
