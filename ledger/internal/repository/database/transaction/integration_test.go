@@ -1,6 +1,6 @@
 //go:build integration
 
-package database_test
+package transaction_test
 
 import (
 	"context"
@@ -11,11 +11,12 @@ import (
 
 	dbpgx "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/database/pgx"
 	"github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/domain"
-	repositorydb "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository/database"
+	"github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository/database/testhelper"
+	transactionrepository "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository/database/transaction"
 )
 
 func TestTransactionRepository(t *testing.T) {
-	dsn := requireEnv(t, "LEDGER_DATABASE_URL")
+	dsn := testhelper.RequireEnv(t, "LEDGER_DATABASE_URL")
 
 	ctx := context.Background()
 
@@ -24,12 +25,12 @@ func TestTransactionRepository(t *testing.T) {
 
 	t.Cleanup(client.Close)
 
-	repository := repositorydb.New(client)
+	repository := transactionrepository.New(client)
 
 	userID := "22222222-2222-2222-2222-222222222222"
 	category := "food"
 
-	cleanupTransactions(
+	testhelper.CleanupTransactions(
 		t,
 		ctx,
 		client,
@@ -37,7 +38,7 @@ func TestTransactionRepository(t *testing.T) {
 	)
 
 	t.Cleanup(func() {
-		cleanupTransactions(
+		testhelper.CleanupTransactions(
 			t,
 			context.Background(),
 			client,

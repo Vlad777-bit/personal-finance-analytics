@@ -1,6 +1,6 @@
 //go:build integration
 
-package database_test
+package testhelper
 
 import (
 	"context"
@@ -12,13 +12,14 @@ import (
 	"github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/database"
 )
 
-func requireEnv(
+func RequireEnv(
 	t *testing.T,
 	key string,
 ) string {
 	t.Helper()
 
 	value := os.Getenv(key)
+
 	require.NotEmptyf(
 		t,
 		value,
@@ -29,7 +30,7 @@ func requireEnv(
 	return value
 }
 
-func cleanupBudget(
+func CleanupBudget(
 	t *testing.T,
 	ctx context.Context,
 	db database.DB,
@@ -51,7 +52,7 @@ func cleanupBudget(
 	require.NoError(t, err)
 }
 
-func cleanupTransactions(
+func CleanupTransactions(
 	t *testing.T,
 	ctx context.Context,
 	db database.DB,

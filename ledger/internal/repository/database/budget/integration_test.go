@@ -1,6 +1,6 @@
 //go:build integration
 
-package database_test
+package budget_test
 
 import (
 	"context"
@@ -10,7 +10,8 @@ import (
 
 	dbpgx "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/database/pgx"
 	"github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/domain"
-	repositorydb "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository/database"
+	budgetrepository "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository/database/budget"
+	"github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository/database/testhelper"
 )
 
 const (
@@ -19,7 +20,7 @@ const (
 )
 
 func TestBudgetRepository(t *testing.T) {
-	dsn := requireEnv(t, "LEDGER_DATABASE_URL")
+	dsn := testhelper.RequireEnv(t, "LEDGER_DATABASE_URL")
 
 	ctx := context.Background()
 
@@ -28,9 +29,9 @@ func TestBudgetRepository(t *testing.T) {
 
 	t.Cleanup(client.Close)
 
-	repository := repositorydb.New(client)
+	repository := budgetrepository.New(client)
 
-	cleanupBudget(
+	testhelper.CleanupBudget(
 		t,
 		ctx,
 		client,
@@ -39,7 +40,7 @@ func TestBudgetRepository(t *testing.T) {
 	)
 
 	t.Cleanup(func() {
-		cleanupBudget(
+		testhelper.CleanupBudget(
 			t,
 			context.Background(),
 			client,

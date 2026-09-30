@@ -1,4 +1,4 @@
-package database
+package budget
 
 import (
 	"context"
