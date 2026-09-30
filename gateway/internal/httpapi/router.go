@@ -11,6 +11,7 @@ type healthResponse struct {
 
 func NewRouter() http.Handler {
 	mux := http.NewServeMux()
+
 	mux.HandleFunc("GET /ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(healthResponse{Status: "ok"}); err != nil {
