@@ -81,6 +81,52 @@ func TestServer_CreateBudget(t *testing.T) {
 	require.Equal(t, int64(50000), response.GetBudget().GetLimitAmount())
 }
 
+func TestServer_GetTransactions(t *testing.T) {
+	t.Parallel()
+
+	from := time.Date(2026, time.September, 1, 0, 0, 0, 0, time.UTC)
+	to := from.AddDate(0, 1, 0)
+	createdAt := from.Add(time.Hour)
+
+	ledgerService := servicemocks.NewLedgerService(t)
+	ledgerService.EXPECT().GetTransactions(
+		mock.Anything,
+		service.GetTransactionsInput{
+			UserID:   "user-1",
+			Category: "food",
+			From:     from,
+			To:       to,
+		},
+	).Return([]domain.Transaction{
+		{
+			ID:          "transaction-1",
+			UserID:      "user-1",
+			Amount:      1500,
+			Category:    "food",
+			Description: "lunch",
+			OccurredAt:  from,
+			CreatedAt:   createdAt,
+		},
+	}, nil)
+
+	response, err := grpctransport.New(ledgerService).GetTransactions(
+		t.Context(),
+		&ledgerv1.GetTransactionsRequest{
+			UserId:   "user-1",
+			Category: "food",
+			From:     timestamppb.New(from),
+			To:       timestamppb.New(to),
+		},
+	)
+	require.NoError(t, err)
+	require.Len(t, response.GetTransactions(), 1)
+	require.Equal(t, "transaction-1", response.GetTransactions()[0].GetId())
+	require.True(
+		t,
+		response.GetTransactions()[0].GetCreatedAt().AsTime().Equal(createdAt),
+	)
+}
+
 func TestServer_RejectsNilRequest(t *testing.T) {
 	t.Parallel()
 
@@ -88,9 +134,44 @@ func TestServer_RejectsNilRequest(t *testing.T) {
 
 	_, transactionErr := server.CreateTransaction(context.Background(), nil)
 	_, budgetErr := server.CreateBudget(context.Background(), nil)
+	_, getTransactionsErr := server.GetTransactions(context.Background(), nil)
 
 	require.Equal(t, codes.InvalidArgument, status.Code(transactionErr))
 	require.Equal(t, codes.InvalidArgument, status.Code(budgetErr))
+	require.Equal(t, codes.InvalidArgument, status.Code(getTransactionsErr))
+}
+
+func TestServer_GetTransactionsRejectsInvalidTimestamp(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		request *ledgerv1.GetTransactionsRequest
+	}{
+		{
+			name: "invalid from",
+			request: &ledgerv1.GetTransactionsRequest{
+				From: &timestamppb.Timestamp{Seconds: 253402300800},
+			},
+		},
+		{
+			name: "invalid to",
+			request: &ledgerv1.GetTransactionsRequest{
+				To: &timestamppb.Timestamp{Seconds: 253402300800},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			server := grpctransport.New(servicemocks.NewLedgerService(t))
+			_, err := server.GetTransactions(t.Context(), tt.request)
+
+			require.Equal(t, codes.InvalidArgument, status.Code(err))
+		})
+	}
 }
 
 func TestServer_RejectsInvalidTimestamp(t *testing.T) {

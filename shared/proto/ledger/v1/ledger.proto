@@ -8,6 +8,7 @@ option go_package = "github.com/Vlad777-bit/personal-finance-analytics/shared/ge
 
 service LedgerService {
   rpc CreateTransaction(CreateTransactionRequest) returns (CreateTransactionResponse);
+  rpc GetTransactions(GetTransactionsRequest) returns (GetTransactionsResponse);
   rpc CreateBudget(CreateBudgetRequest) returns (CreateBudgetResponse);
 }
 
@@ -31,6 +32,17 @@ message CreateTransactionRequest {
 
 message CreateTransactionResponse {
   Transaction transaction = 1;
+}
+
+message GetTransactionsRequest {
+  string user_id = 1;
+  string category = 2;
+  google.protobuf.Timestamp from = 3;
+  google.protobuf.Timestamp to = 4;
+}
+
+message GetTransactionsResponse {
+  repeated Transaction transactions = 1;
 }
 
 message Budget {

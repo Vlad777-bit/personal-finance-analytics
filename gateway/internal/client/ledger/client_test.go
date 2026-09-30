@@ -42,6 +42,14 @@ func (f *fakeLedgerServiceClient) CreateBudget(
 	return f.createBudget(ctx, request)
 }
 
+func (f *fakeLedgerServiceClient) GetTransactions(
+	context.Context,
+	*ledgerv1.GetTransactionsRequest,
+	...grpc.CallOption,
+) (*ledgerv1.GetTransactionsResponse, error) {
+	panic("unexpected GetTransactions call")
+}
+
 func TestClient_CreateTransaction(t *testing.T) {
 	t.Parallel()
 

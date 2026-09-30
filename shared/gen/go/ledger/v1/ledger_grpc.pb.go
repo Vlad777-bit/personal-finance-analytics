@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	LedgerService_CreateTransaction_FullMethodName = "/ledger.v1.LedgerService/CreateTransaction"
+	LedgerService_GetTransactions_FullMethodName   = "/ledger.v1.LedgerService/GetTransactions"
 	LedgerService_CreateBudget_FullMethodName      = "/ledger.v1.LedgerService/CreateBudget"
 )
 
@@ -28,6 +29,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type LedgerServiceClient interface {
 	CreateTransaction(ctx context.Context, in *CreateTransactionRequest, opts ...grpc.CallOption) (*CreateTransactionResponse, error)
+	GetTransactions(ctx context.Context, in *GetTransactionsRequest, opts ...grpc.CallOption) (*GetTransactionsResponse, error)
 	CreateBudget(ctx context.Context, in *CreateBudgetRequest, opts ...grpc.CallOption) (*CreateBudgetResponse, error)
 }
 
@@ -49,6 +51,16 @@ func (c *ledgerServiceClient) CreateTransaction(ctx context.Context, in *CreateT
 	return out, nil
 }
 
+func (c *ledgerServiceClient) GetTransactions(ctx context.Context, in *GetTransactionsRequest, opts ...grpc.CallOption) (*GetTransactionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTransactionsResponse)
+	err := c.cc.Invoke(ctx, LedgerService_GetTransactions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *ledgerServiceClient) CreateBudget(ctx context.Context, in *CreateBudgetRequest, opts ...grpc.CallOption) (*CreateBudgetResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateBudgetResponse)
@@ -64,6 +76,7 @@ func (c *ledgerServiceClient) CreateBudget(ctx context.Context, in *CreateBudget
 // for forward compatibility.
 type LedgerServiceServer interface {
 	CreateTransaction(context.Context, *CreateTransactionRequest) (*CreateTransactionResponse, error)
+	GetTransactions(context.Context, *GetTransactionsRequest) (*GetTransactionsResponse, error)
 	CreateBudget(context.Context, *CreateBudgetRequest) (*CreateBudgetResponse, error)
 	mustEmbedUnimplementedLedgerServiceServer()
 }
@@ -77,6 +90,9 @@ type UnimplementedLedgerServiceServer struct{}
 
 func (UnimplementedLedgerServiceServer) CreateTransaction(context.Context, *CreateTransactionRequest) (*CreateTransactionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateTransaction not implemented")
+}
+func (UnimplementedLedgerServiceServer) GetTransactions(context.Context, *GetTransactionsRequest) (*GetTransactionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTransactions not implemented")
 }
 func (UnimplementedLedgerServiceServer) CreateBudget(context.Context, *CreateBudgetRequest) (*CreateBudgetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateBudget not implemented")
@@ -120,6 +136,24 @@ func _LedgerService_CreateTransaction_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LedgerService_GetTransactions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTransactionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LedgerServiceServer).GetTransactions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LedgerService_GetTransactions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LedgerServiceServer).GetTransactions(ctx, req.(*GetTransactionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _LedgerService_CreateBudget_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateBudgetRequest)
 	if err := dec(in); err != nil {
@@ -148,6 +182,10 @@ var LedgerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateTransaction",
 			Handler:    _LedgerService_CreateTransaction_Handler,
+		},
+		{
+			MethodName: "GetTransactions",
+			Handler:    _LedgerService_GetTransactions_Handler,
 		},
 		{
 			MethodName: "CreateBudget",

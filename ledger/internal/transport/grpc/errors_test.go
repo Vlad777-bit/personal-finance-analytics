@@ -28,6 +28,7 @@ func TestMapServiceError(t *testing.T) {
 		{name: "invalid amount", err: domain.ErrInvalidAmount, code: codes.InvalidArgument},
 		{name: "invalid budget", err: domain.ErrInvalidBudget, code: codes.InvalidArgument},
 		{name: "invalid date", err: domain.ErrDateRequired, code: codes.InvalidArgument},
+		{name: "invalid period", err: domain.ErrInvalidPeriod, code: codes.InvalidArgument},
 		{name: "budget not found", err: domain.ErrBudgetNotFound, code: codes.NotFound},
 		{name: "budget exceeded", err: domain.ErrBudgetExceeded, code: codes.FailedPrecondition},
 		{name: "internal", err: errors.New("database error"), code: codes.Internal},

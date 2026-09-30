@@ -126,6 +126,25 @@ func TestLedgerGRPC(t *testing.T) {
 		require.Equal(t, int64(2000), response.GetTransaction().GetAmount())
 	})
 
+	t.Run("get transactions", func(t *testing.T) {
+		response, callErr := client.GetTransactions(
+			rpcContext,
+			&ledgerv1.GetTransactionsRequest{
+				UserId:   testGRPCUserID,
+				Category: testGRPCCategory,
+				From:     timestamppb.New(occurredAt.Add(-time.Hour)),
+				To:       timestamppb.New(occurredAt.Add(time.Hour)),
+			},
+		)
+		require.NoError(t, callErr)
+		require.Len(t, response.GetTransactions(), 1)
+		require.Equal(
+			t,
+			"integration transaction",
+			response.GetTransactions()[0].GetDescription(),
+		)
+	})
+
 	t.Run("budget exceeded", func(t *testing.T) {
 		_, callErr := client.CreateTransaction(
 			rpcContext,
