@@ -97,6 +97,7 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		http.StatusCreated,
 	)
 	assertTransactionList(t, httpClient, baseURL)
+	assertSummary(t, httpClient, baseURL)
 	assertStatus(
 		t,
 		httpClient,
@@ -116,6 +117,66 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		[]byte("{"),
 		http.StatusBadRequest,
 	)
+}
+
+func assertSummary(t *testing.T, client *http.Client, baseURL string) {
+	t.Helper()
+
+	query := url.Values{
+		"user_id": {testUserID},
+		"from":    {"2026-09-01T00:00:00Z"},
+		"to":      {"2026-10-01T00:00:00Z"},
+	}
+	request, err := http.NewRequestWithContext(
+		context.Background(),
+		http.MethodGet,
+		baseURL+"/reports/summary?"+query.Encode(),
+		http.NoBody,
+	)
+	if err != nil {
+		t.Fatalf("create summary request: %v", err)
+	}
+
+	response, err := client.Do(request)
+	if err != nil {
+		t.Fatalf("get summary: %v", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, response.StatusCode)
+	}
+
+	var summary struct {
+		UserID     string `json:"user_id"`
+		TotalSpent int64  `json:"total_spent"`
+		Categories []struct {
+			Category         string `json:"category"`
+			Spent            int64  `json:"spent"`
+			BudgetLimit      int64  `json:"budget_limit"`
+			BudgetConfigured bool   `json:"budget_configured"`
+			Remaining        int64  `json:"remaining"`
+			BudgetExceeded   bool   `json:"budget_exceeded"`
+		} `json:"categories"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&summary); err != nil {
+		t.Fatalf("decode summary response: %v", err)
+	}
+	if summary.UserID != testUserID || summary.TotalSpent != 2000 {
+		t.Fatalf("unexpected summary: %+v", summary)
+	}
+	if len(summary.Categories) != 1 {
+		t.Fatalf("expected one summary category, got %d", len(summary.Categories))
+	}
+	category := summary.Categories[0]
+	if category.Category != testCategory ||
+		category.Spent != 2000 ||
+		category.BudgetLimit != 3000 ||
+		!category.BudgetConfigured ||
+		category.Remaining != 1000 ||
+		category.BudgetExceeded {
+		t.Fatalf("unexpected summary category: %+v", category)
+	}
 }
 
 func assertBudgetList(t *testing.T, client *http.Client, baseURL string) {

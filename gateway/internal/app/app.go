@@ -10,6 +10,7 @@ import (
 	ledgerclient "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/client/ledger"
 	httptransport "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http"
 	budgettransport "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http/budget"
+	reporttransport "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http/report"
 	transactiontransport "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http/transaction"
 )
 
@@ -35,6 +36,7 @@ func New(
 
 	budgetHandler := budgettransport.NewHandler(ledgerClient)
 	transactionHandler := transactiontransport.NewHandler(ledgerClient)
+	reportHandler := reporttransport.NewHandler(ledgerClient)
 
 	router := httptransport.NewRouter()
 
@@ -42,6 +44,7 @@ func New(
 	router.HandleFunc("GET /budgets", budgetHandler.GetBudgets)
 	router.HandleFunc("POST /transactions", transactionHandler.Create)
 	router.HandleFunc("GET /transactions", transactionHandler.GetTransactions)
+	router.HandleFunc("GET /reports/summary", reportHandler.GetSummary)
 
 	return &App{
 		server: &http.Server{
