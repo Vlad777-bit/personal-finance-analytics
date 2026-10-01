@@ -19,6 +19,17 @@ type fakeLedgerClient struct {
 		context.Context,
 		ledgerclient.CreateBudgetInput,
 	) (ledgerclient.Budget, error)
+	getBudgets func(
+		context.Context,
+		ledgerclient.GetBudgetsInput,
+	) ([]ledgerclient.Budget, error)
+}
+
+func (f *fakeLedgerClient) GetBudgets(
+	ctx context.Context,
+	input ledgerclient.GetBudgetsInput,
+) ([]ledgerclient.Budget, error) {
+	return f.getBudgets(ctx, input)
 }
 
 func (f *fakeLedgerClient) CreateBudget(
@@ -138,5 +149,10 @@ func clientMustNotBeCalled(t *testing.T) *fakeLedgerClient {
 		ledgerclient.CreateBudgetInput,
 	) (ledgerclient.Budget, error) {
 		return ledgerclient.Budget{}, errors.New("unexpected CreateBudget call")
+	}, getBudgets: func(
+		context.Context,
+		ledgerclient.GetBudgetsInput,
+	) ([]ledgerclient.Budget, error) {
+		return nil, errors.New("unexpected GetBudgets call")
 	}}
 }

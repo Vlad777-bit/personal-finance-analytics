@@ -39,6 +39,7 @@ func New(
 	router := httptransport.NewRouter()
 
 	router.HandleFunc("PUT /budgets/{category}", budgetHandler.Upsert)
+	router.HandleFunc("GET /budgets", budgetHandler.GetBudgets)
 	router.HandleFunc("POST /transactions", transactionHandler.Create)
 	router.HandleFunc("GET /transactions", transactionHandler.GetTransactions)
 

@@ -84,6 +84,7 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		map[string]any{"user_id": testUserID, "limit_amount": 3000},
 		http.StatusOK,
 	)
+	assertBudgetList(t, httpClient, baseURL)
 	assertStatus(
 		t,
 		httpClient,
@@ -115,6 +116,49 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		[]byte("{"),
 		http.StatusBadRequest,
 	)
+}
+
+func assertBudgetList(t *testing.T, client *http.Client, baseURL string) {
+	t.Helper()
+
+	query := url.Values{"user_id": {testUserID}}
+	request, err := http.NewRequestWithContext(
+		context.Background(),
+		http.MethodGet,
+		baseURL+"/budgets?"+query.Encode(),
+		http.NoBody,
+	)
+	if err != nil {
+		t.Fatalf("create budget list request: %v", err)
+	}
+
+	response, err := client.Do(request)
+	if err != nil {
+		t.Fatalf("get budgets: %v", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, response.StatusCode)
+	}
+
+	var budgets []struct {
+		UserID   string `json:"user_id"`
+		Category string `json:"category"`
+		Limit    int64  `json:"limit_amount"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&budgets); err != nil {
+		t.Fatalf("decode budget list response: %v", err)
+	}
+	if len(budgets) != 1 {
+		t.Fatalf("expected one budget, got %d", len(budgets))
+	}
+	budget := budgets[0]
+	if budget.UserID != testUserID ||
+		budget.Category != testCategory ||
+		budget.Limit != 3000 {
+		t.Fatalf("unexpected budget: %+v", budget)
+	}
 }
 
 func assertTransactionList(t *testing.T, client *http.Client, baseURL string) {

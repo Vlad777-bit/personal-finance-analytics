@@ -14,6 +14,11 @@ type LedgerClient interface {
 		ctx context.Context,
 		input ledgerclient.CreateBudgetInput,
 	) (ledgerclient.Budget, error)
+
+	GetBudgets(
+		ctx context.Context,
+		input ledgerclient.GetBudgetsInput,
+	) ([]ledgerclient.Budget, error)
 }
 
 type Handler struct {
