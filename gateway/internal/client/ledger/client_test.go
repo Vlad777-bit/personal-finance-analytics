@@ -32,6 +32,10 @@ type fakeLedgerServiceClient struct {
 		context.Context,
 		*ledgerv1.GetBudgetsRequest,
 	) (*ledgerv1.GetBudgetsResponse, error)
+	getSummary func(
+		context.Context,
+		*ledgerv1.GetSummaryRequest,
+	) (*ledgerv1.GetSummaryResponse, error)
 }
 
 func (f *fakeLedgerServiceClient) CreateTransaction(
@@ -67,11 +71,11 @@ func (f *fakeLedgerServiceClient) GetBudgets(
 }
 
 func (f *fakeLedgerServiceClient) GetSummary(
-	_ context.Context,
-	_ *ledgerv1.GetSummaryRequest,
+	ctx context.Context,
+	request *ledgerv1.GetSummaryRequest,
 	_ ...grpc.CallOption,
 ) (*ledgerv1.GetSummaryResponse, error) {
-	panic("unexpected GetSummary call")
+	return f.getSummary(ctx, request)
 }
 
 func TestClient_CreateTransaction(t *testing.T) {
@@ -310,6 +314,138 @@ func TestClient_GetBudgets(t *testing.T) {
 				t.Context(),
 				GetBudgetsInput{UserID: "user-1"},
 			)
+
+			require.ErrorIs(t, err, tt.wantErr)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestClient_GetSummary(t *testing.T) {
+	t.Parallel()
+
+	from := time.Date(2026, time.October, 1, 0, 0, 0, 0, time.UTC)
+	to := from.AddDate(0, 1, 0)
+	tests := []struct {
+		name    string
+		call    func(*testing.T, *ledgerv1.GetSummaryRequest) (*ledgerv1.GetSummaryResponse, error)
+		want    Summary
+		wantErr error
+	}{
+		{
+			name: "success",
+			call: func(t *testing.T, request *ledgerv1.GetSummaryRequest) (*ledgerv1.GetSummaryResponse, error) {
+				t.Helper()
+				require.Equal(t, "user-1", request.GetUserId())
+				require.True(t, request.GetFrom().AsTime().Equal(from))
+				require.True(t, request.GetTo().AsTime().Equal(to))
+
+				return &ledgerv1.GetSummaryResponse{Summary: &ledgerv1.Summary{
+					UserId: "user-1", From: timestamppb.New(from), To: timestamppb.New(to),
+					TotalSpent: 600,
+					Categories: []*ledgerv1.CategorySummary{
+						{
+							Category: "food", Spent: 600, BudgetLimit: 500,
+							BudgetConfigured: true, Remaining: -100, BudgetExceeded: true,
+						},
+					},
+				}}, nil
+			},
+			want: Summary{
+				UserID: "user-1", From: from, To: to, TotalSpent: 600,
+				Categories: []CategorySummary{
+					{
+						Category: "food", Spent: 600, BudgetLimit: 500,
+						BudgetConfigured: true, Remaining: -100, BudgetExceeded: true,
+					},
+				},
+			},
+		},
+		{
+			name: "empty summary",
+			call: func(_ *testing.T, _ *ledgerv1.GetSummaryRequest) (*ledgerv1.GetSummaryResponse, error) {
+				return &ledgerv1.GetSummaryResponse{Summary: &ledgerv1.Summary{
+					UserId: "user-1", From: timestamppb.New(from), To: timestamppb.New(to),
+				}}, nil
+			},
+			want: Summary{UserID: "user-1", From: from, To: to, Categories: []CategorySummary{}},
+		},
+		{
+			name: "grpc error",
+			call: func(_ *testing.T, _ *ledgerv1.GetSummaryRequest) (*ledgerv1.GetSummaryResponse, error) {
+				return nil, status.Error(codes.InvalidArgument, "invalid period")
+			},
+			wantErr: ErrInvalidArgument,
+		},
+		{
+			name: "nil response",
+			call: func(_ *testing.T, _ *ledgerv1.GetSummaryRequest) (*ledgerv1.GetSummaryResponse, error) {
+				return nil, nil
+			},
+			wantErr: ErrInvalidResponse,
+		},
+		{
+			name: "nil summary",
+			call: func(_ *testing.T, _ *ledgerv1.GetSummaryRequest) (*ledgerv1.GetSummaryResponse, error) {
+				return &ledgerv1.GetSummaryResponse{}, nil
+			},
+			wantErr: ErrInvalidResponse,
+		},
+		{
+			name: "missing timestamps",
+			call: func(_ *testing.T, _ *ledgerv1.GetSummaryRequest) (*ledgerv1.GetSummaryResponse, error) {
+				return &ledgerv1.GetSummaryResponse{Summary: &ledgerv1.Summary{}}, nil
+			},
+			wantErr: ErrInvalidResponse,
+		},
+		{
+			name: "invalid from timestamp",
+			call: func(_ *testing.T, _ *ledgerv1.GetSummaryRequest) (*ledgerv1.GetSummaryResponse, error) {
+				return &ledgerv1.GetSummaryResponse{Summary: &ledgerv1.Summary{
+					From: &timestamppb.Timestamp{Seconds: 253402300800},
+					To:   timestamppb.New(to),
+				}}, nil
+			},
+			wantErr: ErrInvalidResponse,
+		},
+		{
+			name: "invalid to timestamp",
+			call: func(_ *testing.T, _ *ledgerv1.GetSummaryRequest) (*ledgerv1.GetSummaryResponse, error) {
+				return &ledgerv1.GetSummaryResponse{Summary: &ledgerv1.Summary{
+					From: timestamppb.New(from),
+					To:   &timestamppb.Timestamp{Seconds: 253402300800},
+				}}, nil
+			},
+			wantErr: ErrInvalidResponse,
+		},
+		{
+			name: "nil category",
+			call: func(_ *testing.T, _ *ledgerv1.GetSummaryRequest) (*ledgerv1.GetSummaryResponse, error) {
+				return &ledgerv1.GetSummaryResponse{Summary: &ledgerv1.Summary{
+					From: timestamppb.New(from), To: timestamppb.New(to),
+					Categories: []*ledgerv1.CategorySummary{nil},
+				}}, nil
+			},
+			wantErr: ErrInvalidResponse,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			client := &Client{service: &fakeLedgerServiceClient{
+				getSummary: func(
+					_ context.Context,
+					request *ledgerv1.GetSummaryRequest,
+				) (*ledgerv1.GetSummaryResponse, error) {
+					return tt.call(t, request)
+				},
+			}}
+
+			got, err := client.GetSummary(t.Context(), GetSummaryInput{
+				UserID: "user-1", From: from, To: to,
+			})
 
 			require.ErrorIs(t, err, tt.wantErr)
 			require.Equal(t, tt.want, got)

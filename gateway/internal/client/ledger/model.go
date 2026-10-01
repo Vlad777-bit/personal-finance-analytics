@@ -49,6 +49,29 @@ type GetBudgetsInput struct {
 	UserID string
 }
 
+type GetSummaryInput struct {
+	UserID string
+	From   time.Time
+	To     time.Time
+}
+
+type Summary struct {
+	UserID     string
+	From       time.Time
+	To         time.Time
+	TotalSpent int64
+	Categories []CategorySummary
+}
+
+type CategorySummary struct {
+	Category         string
+	Spent            int64
+	BudgetLimit      int64
+	BudgetConfigured bool
+	Remaining        int64
+	BudgetExceeded   bool
+}
+
 func transactionFromProto(transaction *ledgerv1.Transaction) (Transaction, error) {
 	if transaction == nil {
 		return Transaction{}, ErrInvalidResponse
