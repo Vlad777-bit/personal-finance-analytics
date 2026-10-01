@@ -66,5 +66,15 @@ func (s *service) CreateTransaction(
 		return domain.Transaction{}, fmt.Errorf("create transaction: %w", err)
 	}
 
+	if err := s.summaryCache.InvalidateUser(ctx, createdTransaction.UserID); err != nil {
+		s.logger.Warn(
+			"invalidate summary cache after transaction",
+			"user_id",
+			createdTransaction.UserID,
+			"error",
+			err,
+		)
+	}
+
 	return createdTransaction, nil
 }

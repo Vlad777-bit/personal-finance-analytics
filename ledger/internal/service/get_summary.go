@@ -20,6 +20,14 @@ func (s *service) GetSummary(
 		return domain.Summary{}, domain.ErrInvalidPeriod
 	}
 
+	summary, version, hit, err := s.summaryCache.Get(ctx, userID, input.From, input.To)
+	cacheAvailable := err == nil
+	if err != nil {
+		s.logger.Warn("get summary from cache", "error", err)
+	} else if hit {
+		return summary, nil
+	}
+
 	data, err := s.reportRepository.GetSummaryData(
 		ctx,
 		userID,
@@ -30,5 +38,12 @@ func (s *service) GetSummary(
 		return domain.Summary{}, fmt.Errorf("get summary data: %w", err)
 	}
 
-	return domain.BuildSummary(userID, input.From, input.To, data), nil
+	summary = domain.BuildSummary(userID, input.From, input.To, data)
+	if cacheAvailable {
+		if err := s.summaryCache.Set(ctx, summary, version, s.summaryCacheTTL); err != nil {
+			s.logger.Warn("store summary in cache", "error", err)
+		}
+	}
+
+	return summary, nil
 }

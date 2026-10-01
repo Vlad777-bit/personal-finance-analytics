@@ -237,7 +237,7 @@ tasks:
 
 
   test:integration:
-    desc: "Запускает integration-тесты Ledger с PostgreSQL"
+    desc: "Запускает integration-тесты Ledger с PostgreSQL и Redis"
     cmds:
       - |
         set -e
@@ -259,6 +259,7 @@ tasks:
             -tags=integration \
             -count=1 \
             -v \
+            ./internal/cache/redis \
             ./internal/app \
             ./internal/repository/database/...
         )

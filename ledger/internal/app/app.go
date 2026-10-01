@@ -2,12 +2,16 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 	"net"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
+	redisCache "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/cache/redis"
 	dbpgx "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/database/pgx"
 	budgetrepository "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository/database/budget"
 	reportrepository "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository/database/report"
@@ -19,6 +23,7 @@ import (
 
 type App struct {
 	database *dbpgx.Client
+	cache    *redisCache.Client
 	server   *grpc.Server
 	listener net.Listener
 }
@@ -26,11 +31,20 @@ type App struct {
 func New(
 	ctx context.Context,
 	databaseURL string,
+	redisAddress string,
+	summaryCacheTTL time.Duration,
 	grpcAddress string,
+	logger *slog.Logger,
 ) (*App, error) {
 	databaseClient, err := dbpgx.New(ctx, databaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("create database client: %w", err)
+	}
+	summaryCache, err := redisCache.New(ctx, redisAddress, logger)
+	if err != nil {
+		databaseClient.Close()
+
+		return nil, fmt.Errorf("create Redis cache: %w", err)
 	}
 
 	budgetRepository := budgetrepository.New(
@@ -49,6 +63,9 @@ func New(
 		transactionRepository,
 		budgetRepository,
 		reportRepository,
+		summaryCache,
+		summaryCacheTTL,
+		logger,
 	)
 	grpcServer := grpc.NewServer()
 	ledgerv1.RegisterLedgerServiceServer(
@@ -61,11 +78,15 @@ func New(
 	if err != nil {
 		databaseClient.Close()
 
-		return nil, fmt.Errorf("listen for gRPC connections: %w", err)
+		return nil, errors.Join(
+			fmt.Errorf("listen for gRPC connections: %w", err),
+			summaryCache.Close(),
+		)
 	}
 
 	return &App{
 		database: databaseClient,
+		cache:    summaryCache,
 		server:   grpcServer,
 		listener: listener,
 	}, nil
@@ -100,11 +121,21 @@ func (a *App) Shutdown(ctx context.Context) error {
 		a.server.Stop()
 		<-done
 		a.database.Close()
+		shutdownErr := fmt.Errorf("shutdown gRPC server: %w", ctx.Err())
+		if err := a.cache.Close(); err != nil {
+			return errors.Join(
+				shutdownErr,
+				fmt.Errorf("close summary cache: %w", err),
+			)
+		}
 
-		return fmt.Errorf("shutdown gRPC server: %w", ctx.Err())
+		return shutdownErr
 	}
 
 	a.database.Close()
+	if err := a.cache.Close(); err != nil {
+		return fmt.Errorf("close summary cache: %w", err)
+	}
 
 	return nil
 }

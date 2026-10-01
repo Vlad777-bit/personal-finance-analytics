@@ -107,7 +107,7 @@ func TestService_GetSummary(t *testing.T) {
 
 			reportRepository := mocks.NewReportRepository(t)
 			tt.prepare(reportRepository)
-			ledgerService := service.New(
+			ledgerService := newTestLedgerService(
 				mocks.NewTransactionRepository(t),
 				mocks.NewBudgetRepository(t),
 				reportRepository,

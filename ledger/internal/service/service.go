@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
+	"github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/cache"
 	"github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/domain"
 	"github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository"
 )
@@ -72,17 +74,26 @@ type service struct {
 	transactionRepository repository.TransactionRepository
 	budgetRepository      repository.BudgetRepository
 	reportRepository      repository.ReportRepository
+	summaryCache          cache.SummaryCache
+	summaryCacheTTL       time.Duration
+	logger                *slog.Logger
 }
 
 func New(
 	transactionRepository repository.TransactionRepository,
 	budgetRepository repository.BudgetRepository,
 	reportRepository repository.ReportRepository,
+	summaryCache cache.SummaryCache,
+	summaryCacheTTL time.Duration,
+	logger *slog.Logger,
 ) LedgerService {
 	return &service{
 		transactionRepository: transactionRepository,
 		budgetRepository:      budgetRepository,
 		reportRepository:      reportRepository,
+		summaryCache:          summaryCache,
+		summaryCacheTTL:       summaryCacheTTL,
+		logger:                logger,
 	}
 }
 

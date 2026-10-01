@@ -15,6 +15,9 @@ func TestLoad(t *testing.T) {
 		databaseURL     string
 		grpcPort        string
 		shutdownTimeout string
+		redisHost       string
+		redisPort       string
+		summaryCacheTTL string
 		want            Config
 		wantError       bool
 	}{
@@ -25,6 +28,8 @@ func TestLoad(t *testing.T) {
 				DatabaseURL:     "postgres://finance:finance@localhost:5432/finance",
 				GRPCPort:        "9090",
 				ShutdownTimeout: 10 * time.Second,
+				RedisAddress:    "localhost:6379",
+				SummaryCacheTTL: 5 * time.Minute,
 			},
 		},
 		{
@@ -35,6 +40,8 @@ func TestLoad(t *testing.T) {
 				DatabaseURL:     "postgres://finance:finance@localhost:5432/finance",
 				GRPCPort:        "9090",
 				ShutdownTimeout: 3 * time.Second,
+				RedisAddress:    "localhost:6379",
+				SummaryCacheTTL: 5 * time.Minute,
 			},
 		},
 		{
@@ -45,7 +52,41 @@ func TestLoad(t *testing.T) {
 				DatabaseURL:     "postgres://finance:finance@localhost:5432/finance",
 				GRPCPort:        "19090",
 				ShutdownTimeout: 10 * time.Second,
+				RedisAddress:    "localhost:6379",
+				SummaryCacheTTL: 5 * time.Minute,
 			},
+		},
+		{
+			name:            "custom Redis and cache TTL",
+			databaseURL:     "postgres://finance:finance@localhost:5432/finance",
+			redisHost:       "redis",
+			redisPort:       "6380",
+			summaryCacheTTL: "30s",
+			want: Config{
+				DatabaseURL:     "postgres://finance:finance@localhost:5432/finance",
+				GRPCPort:        "9090",
+				ShutdownTimeout: 10 * time.Second,
+				RedisAddress:    "redis:6380",
+				SummaryCacheTTL: 30 * time.Second,
+			},
+		},
+		{
+			name:        "invalid Redis port",
+			databaseURL: "postgres://finance:finance@localhost:5432/finance",
+			redisPort:   "redis",
+			wantError:   true,
+		},
+		{
+			name:        "zero Redis port",
+			databaseURL: "postgres://finance:finance@localhost:5432/finance",
+			redisPort:   "0",
+			wantError:   true,
+		},
+		{
+			name:        "out of range Redis port",
+			databaseURL: "postgres://finance:finance@localhost:5432/finance",
+			redisPort:   "65536",
+			wantError:   true,
 		},
 		{
 			name:        "non-numeric gRPC port",
@@ -81,6 +122,18 @@ func TestLoad(t *testing.T) {
 			shutdownTimeout: "0s",
 			wantError:       true,
 		},
+		{
+			name:            "invalid cache TTL",
+			databaseURL:     "postgres://finance:finance@localhost:5432/finance",
+			summaryCacheTTL: "later",
+			wantError:       true,
+		},
+		{
+			name:            "non-positive cache TTL",
+			databaseURL:     "postgres://finance:finance@localhost:5432/finance",
+			summaryCacheTTL: "0s",
+			wantError:       true,
+		},
 	}
 
 	for _, test := range tests {
@@ -88,6 +141,9 @@ func TestLoad(t *testing.T) {
 			t.Setenv("LEDGER_DATABASE_URL", test.databaseURL)
 			t.Setenv("LEDGER_GRPC_PORT", test.grpcPort)
 			t.Setenv("LEDGER_SHUTDOWN_TIMEOUT", test.shutdownTimeout)
+			t.Setenv("REDIS_HOST", test.redisHost)
+			t.Setenv("REDIS_PORT", test.redisPort)
+			t.Setenv("LEDGER_SUMMARY_CACHE_TTL", test.summaryCacheTTL)
 
 			got, err := Load()
 			if test.wantError {

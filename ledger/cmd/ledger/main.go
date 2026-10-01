@@ -37,7 +37,10 @@ func run() int {
 	application, err := app.New(
 		signalContext,
 		cfg.DatabaseURL,
+		cfg.RedisAddress,
+		cfg.SummaryCacheTTL,
 		grpcAddress,
+		logger,
 	)
 	if err != nil {
 		logger.Error("initialize ledger application", "error", err)

@@ -378,7 +378,7 @@ func TestService_CreateTransaction(t *testing.T) {
 				budgetRepository,
 			)
 
-			ledgerService := service.New(
+			ledgerService := newTestLedgerService(
 				transactionRepository,
 				budgetRepository,
 				reportRepository,

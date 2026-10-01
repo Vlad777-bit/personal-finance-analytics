@@ -4,6 +4,9 @@ package app
 
 import (
 	"context"
+	"log/slog"
+	"net"
+	"os"
 	"testing"
 	"time"
 
@@ -25,12 +28,16 @@ const (
 
 func TestLedgerGRPC(t *testing.T) {
 	databaseURL := testhelper.RequireEnv(t, "LEDGER_DATABASE_URL")
+	redisAddress := integrationRedisAddress()
 	applicationContext, cancelApplication := context.WithCancel(context.Background())
 
 	application, err := New(
 		applicationContext,
 		databaseURL,
+		redisAddress,
+		5*time.Minute,
 		"127.0.0.1:0",
+		slog.Default(),
 	)
 	require.NoError(t, err)
 
@@ -195,4 +202,18 @@ func TestLedgerGRPC(t *testing.T) {
 		)
 		require.Equal(t, codes.InvalidArgument, status.Code(callErr))
 	})
+}
+
+func integrationRedisAddress() string {
+	host := os.Getenv("REDIS_HOST")
+	if host == "" {
+		host = "localhost"
+	}
+
+	port := os.Getenv("REDIS_PORT")
+	if port == "" {
+		port = "6379"
+	}
+
+	return net.JoinHostPort(host, port)
 }

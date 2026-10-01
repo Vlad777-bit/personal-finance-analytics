@@ -60,7 +60,7 @@ func TestService_GetBudgets(t *testing.T) {
 			reportRepository := mocks.NewReportRepository(t)
 			tt.prepare(budgetRepository)
 
-			ledgerService := service.New(
+			ledgerService := newTestLedgerService(
 				transactionRepository,
 				budgetRepository,
 				reportRepository,

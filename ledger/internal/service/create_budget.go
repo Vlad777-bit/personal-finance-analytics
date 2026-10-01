@@ -25,5 +25,15 @@ func (s *service) CreateBudget(
 		return domain.Budget{}, fmt.Errorf("upsert budget: %w", err)
 	}
 
+	if err := s.summaryCache.InvalidateUser(ctx, savedBudget.UserID); err != nil {
+		s.logger.Warn(
+			"invalidate summary cache after budget",
+			"user_id",
+			savedBudget.UserID,
+			"error",
+			err,
+		)
+	}
+
 	return savedBudget, nil
 }
