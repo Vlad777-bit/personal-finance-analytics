@@ -127,6 +127,27 @@ func TestServer_GetTransactions(t *testing.T) {
 	)
 }
 
+func TestServer_GetBudgets(t *testing.T) {
+	t.Parallel()
+
+	ledgerService := servicemocks.NewLedgerService(t)
+	ledgerService.EXPECT().GetBudgets(
+		mock.Anything,
+		service.GetBudgetsInput{UserID: "user-1"},
+	).Return([]domain.Budget{
+		{ID: "budget-1", UserID: "user-1", Category: "food", Limit: 50000},
+	}, nil)
+
+	response, err := grpctransport.New(ledgerService).GetBudgets(
+		t.Context(),
+		&ledgerv1.GetBudgetsRequest{UserId: "user-1"},
+	)
+	require.NoError(t, err)
+	require.Len(t, response.GetBudgets(), 1)
+	require.Equal(t, "budget-1", response.GetBudgets()[0].GetId())
+	require.Equal(t, int64(50000), response.GetBudgets()[0].GetLimitAmount())
+}
+
 func TestServer_RejectsNilRequest(t *testing.T) {
 	t.Parallel()
 
@@ -135,10 +156,12 @@ func TestServer_RejectsNilRequest(t *testing.T) {
 	_, transactionErr := server.CreateTransaction(context.Background(), nil)
 	_, budgetErr := server.CreateBudget(context.Background(), nil)
 	_, getTransactionsErr := server.GetTransactions(context.Background(), nil)
+	_, getBudgetsErr := server.GetBudgets(context.Background(), nil)
 
 	require.Equal(t, codes.InvalidArgument, status.Code(transactionErr))
 	require.Equal(t, codes.InvalidArgument, status.Code(budgetErr))
 	require.Equal(t, codes.InvalidArgument, status.Code(getTransactionsErr))
+	require.Equal(t, codes.InvalidArgument, status.Code(getBudgetsErr))
 }
 
 func TestServer_GetTransactionsRejectsInvalidTimestamp(t *testing.T) {

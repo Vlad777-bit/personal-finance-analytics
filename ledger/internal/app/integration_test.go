@@ -108,6 +108,17 @@ func TestLedgerGRPC(t *testing.T) {
 		require.Equal(t, int64(3000), response.GetBudget().GetLimitAmount())
 	})
 
+	t.Run("get budgets", func(t *testing.T) {
+		response, callErr := client.GetBudgets(
+			rpcContext,
+			&ledgerv1.GetBudgetsRequest{UserId: testGRPCUserID},
+		)
+		require.NoError(t, callErr)
+		require.Len(t, response.GetBudgets(), 1)
+		require.Equal(t, testGRPCCategory, response.GetBudgets()[0].GetCategory())
+		require.Equal(t, int64(3000), response.GetBudgets()[0].GetLimitAmount())
+	})
+
 	occurredAt := time.Date(2026, time.September, 30, 12, 0, 0, 0, time.UTC)
 
 	t.Run("create transaction", func(t *testing.T) {

@@ -28,11 +28,6 @@ func (s *Server) CreateBudget(
 	}
 
 	return &ledgerv1.CreateBudgetResponse{
-		Budget: &ledgerv1.Budget{
-			Id:          budget.ID,
-			UserId:      budget.UserID,
-			Category:    budget.Category,
-			LimitAmount: budget.Limit,
-		},
+		Budget: budgetToProto(budget),
 	}, nil
 }

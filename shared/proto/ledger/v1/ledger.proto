@@ -10,6 +10,7 @@ service LedgerService {
   rpc CreateTransaction(CreateTransactionRequest) returns (CreateTransactionResponse);
   rpc GetTransactions(GetTransactionsRequest) returns (GetTransactionsResponse);
   rpc CreateBudget(CreateBudgetRequest) returns (CreateBudgetResponse);
+  rpc GetBudgets(GetBudgetsRequest) returns (GetBudgetsResponse);
 }
 
 message Transaction {
@@ -60,4 +61,12 @@ message CreateBudgetRequest {
 
 message CreateBudgetResponse {
   Budget budget = 1;
+}
+
+message GetBudgetsRequest {
+  string user_id = 1;
+}
+
+message GetBudgetsResponse {
+  repeated Budget budgets = 1;
 }
