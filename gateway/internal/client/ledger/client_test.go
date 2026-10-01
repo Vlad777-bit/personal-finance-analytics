@@ -66,6 +66,14 @@ func (f *fakeLedgerServiceClient) GetBudgets(
 	return f.getBudgets(ctx, request)
 }
 
+func (f *fakeLedgerServiceClient) GetSummary(
+	_ context.Context,
+	_ *ledgerv1.GetSummaryRequest,
+	_ ...grpc.CallOption,
+) (*ledgerv1.GetSummaryResponse, error) {
+	panic("unexpected GetSummary call")
+}
+
 func TestClient_CreateTransaction(t *testing.T) {
 	t.Parallel()
 

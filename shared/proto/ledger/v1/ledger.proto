@@ -11,6 +11,7 @@ service LedgerService {
   rpc GetTransactions(GetTransactionsRequest) returns (GetTransactionsResponse);
   rpc CreateBudget(CreateBudgetRequest) returns (CreateBudgetResponse);
   rpc GetBudgets(GetBudgetsRequest) returns (GetBudgetsResponse);
+  rpc GetSummary(GetSummaryRequest) returns (GetSummaryResponse);
 }
 
 message Transaction {
@@ -69,4 +70,31 @@ message GetBudgetsRequest {
 
 message GetBudgetsResponse {
   repeated Budget budgets = 1;
+}
+
+message CategorySummary {
+  string category = 1;
+  int64 spent = 2;
+  int64 budget_limit = 3;
+  bool budget_configured = 4;
+  int64 remaining = 5;
+  bool budget_exceeded = 6;
+}
+
+message Summary {
+  string user_id = 1;
+  google.protobuf.Timestamp from = 2;
+  google.protobuf.Timestamp to = 3;
+  int64 total_spent = 4;
+  repeated CategorySummary categories = 5;
+}
+
+message GetSummaryRequest {
+  string user_id = 1;
+  google.protobuf.Timestamp from = 2;
+  google.protobuf.Timestamp to = 3;
+}
+
+message GetSummaryResponse {
+  Summary summary = 1;
 }

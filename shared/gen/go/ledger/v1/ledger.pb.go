@@ -606,6 +606,270 @@ func (x *GetBudgetsResponse) GetBudgets() []*Budget {
 	return nil
 }
 
+type CategorySummary struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Category         string                 `protobuf:"bytes,1,opt,name=category,proto3" json:"category,omitempty"`
+	Spent            int64                  `protobuf:"varint,2,opt,name=spent,proto3" json:"spent,omitempty"`
+	BudgetLimit      int64                  `protobuf:"varint,3,opt,name=budget_limit,json=budgetLimit,proto3" json:"budget_limit,omitempty"`
+	BudgetConfigured bool                   `protobuf:"varint,4,opt,name=budget_configured,json=budgetConfigured,proto3" json:"budget_configured,omitempty"`
+	Remaining        int64                  `protobuf:"varint,5,opt,name=remaining,proto3" json:"remaining,omitempty"`
+	BudgetExceeded   bool                   `protobuf:"varint,6,opt,name=budget_exceeded,json=budgetExceeded,proto3" json:"budget_exceeded,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *CategorySummary) Reset() {
+	*x = CategorySummary{}
+	mi := &file_ledger_v1_ledger_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CategorySummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CategorySummary) ProtoMessage() {}
+
+func (x *CategorySummary) ProtoReflect() protoreflect.Message {
+	mi := &file_ledger_v1_ledger_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CategorySummary.ProtoReflect.Descriptor instead.
+func (*CategorySummary) Descriptor() ([]byte, []int) {
+	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *CategorySummary) GetCategory() string {
+	if x != nil {
+		return x.Category
+	}
+	return ""
+}
+
+func (x *CategorySummary) GetSpent() int64 {
+	if x != nil {
+		return x.Spent
+	}
+	return 0
+}
+
+func (x *CategorySummary) GetBudgetLimit() int64 {
+	if x != nil {
+		return x.BudgetLimit
+	}
+	return 0
+}
+
+func (x *CategorySummary) GetBudgetConfigured() bool {
+	if x != nil {
+		return x.BudgetConfigured
+	}
+	return false
+}
+
+func (x *CategorySummary) GetRemaining() int64 {
+	if x != nil {
+		return x.Remaining
+	}
+	return 0
+}
+
+func (x *CategorySummary) GetBudgetExceeded() bool {
+	if x != nil {
+		return x.BudgetExceeded
+	}
+	return false
+}
+
+type Summary struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	From          *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=from,proto3" json:"from,omitempty"`
+	To            *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=to,proto3" json:"to,omitempty"`
+	TotalSpent    int64                  `protobuf:"varint,4,opt,name=total_spent,json=totalSpent,proto3" json:"total_spent,omitempty"`
+	Categories    []*CategorySummary     `protobuf:"bytes,5,rep,name=categories,proto3" json:"categories,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Summary) Reset() {
+	*x = Summary{}
+	mi := &file_ledger_v1_ledger_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Summary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Summary) ProtoMessage() {}
+
+func (x *Summary) ProtoReflect() protoreflect.Message {
+	mi := &file_ledger_v1_ledger_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Summary.ProtoReflect.Descriptor instead.
+func (*Summary) Descriptor() ([]byte, []int) {
+	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *Summary) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *Summary) GetFrom() *timestamppb.Timestamp {
+	if x != nil {
+		return x.From
+	}
+	return nil
+}
+
+func (x *Summary) GetTo() *timestamppb.Timestamp {
+	if x != nil {
+		return x.To
+	}
+	return nil
+}
+
+func (x *Summary) GetTotalSpent() int64 {
+	if x != nil {
+		return x.TotalSpent
+	}
+	return 0
+}
+
+func (x *Summary) GetCategories() []*CategorySummary {
+	if x != nil {
+		return x.Categories
+	}
+	return nil
+}
+
+type GetSummaryRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	From          *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=from,proto3" json:"from,omitempty"`
+	To            *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=to,proto3" json:"to,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSummaryRequest) Reset() {
+	*x = GetSummaryRequest{}
+	mi := &file_ledger_v1_ledger_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSummaryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSummaryRequest) ProtoMessage() {}
+
+func (x *GetSummaryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ledger_v1_ledger_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSummaryRequest.ProtoReflect.Descriptor instead.
+func (*GetSummaryRequest) Descriptor() ([]byte, []int) {
+	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *GetSummaryRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *GetSummaryRequest) GetFrom() *timestamppb.Timestamp {
+	if x != nil {
+		return x.From
+	}
+	return nil
+}
+
+func (x *GetSummaryRequest) GetTo() *timestamppb.Timestamp {
+	if x != nil {
+		return x.To
+	}
+	return nil
+}
+
+type GetSummaryResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Summary       *Summary               `protobuf:"bytes,1,opt,name=summary,proto3" json:"summary,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSummaryResponse) Reset() {
+	*x = GetSummaryResponse{}
+	mi := &file_ledger_v1_ledger_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSummaryResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSummaryResponse) ProtoMessage() {}
+
+func (x *GetSummaryResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ledger_v1_ledger_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSummaryResponse.ProtoReflect.Descriptor instead.
+func (*GetSummaryResponse) Descriptor() ([]byte, []int) {
+	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *GetSummaryResponse) GetSummary() *Summary {
+	if x != nil {
+		return x.Summary
+	}
+	return nil
+}
+
 var File_ledger_v1_ledger_proto protoreflect.FileDescriptor
 
 const file_ledger_v1_ledger_proto_rawDesc = "" +
@@ -651,13 +915,37 @@ const file_ledger_v1_ledger_proto_rawDesc = "" +
 	"\x11GetBudgetsRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"A\n" +
 	"\x12GetBudgetsResponse\x12+\n" +
-	"\abudgets\x18\x01 \x03(\v2\x11.ledger.v1.BudgetR\abudgets2\xe5\x02\n" +
+	"\abudgets\x18\x01 \x03(\v2\x11.ledger.v1.BudgetR\abudgets\"\xda\x01\n" +
+	"\x0fCategorySummary\x12\x1a\n" +
+	"\bcategory\x18\x01 \x01(\tR\bcategory\x12\x14\n" +
+	"\x05spent\x18\x02 \x01(\x03R\x05spent\x12!\n" +
+	"\fbudget_limit\x18\x03 \x01(\x03R\vbudgetLimit\x12+\n" +
+	"\x11budget_configured\x18\x04 \x01(\bR\x10budgetConfigured\x12\x1c\n" +
+	"\tremaining\x18\x05 \x01(\x03R\tremaining\x12'\n" +
+	"\x0fbudget_exceeded\x18\x06 \x01(\bR\x0ebudgetExceeded\"\xdb\x01\n" +
+	"\aSummary\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12.\n" +
+	"\x04from\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
+	"\x02to\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\x12\x1f\n" +
+	"\vtotal_spent\x18\x04 \x01(\x03R\n" +
+	"totalSpent\x12:\n" +
+	"\n" +
+	"categories\x18\x05 \x03(\v2\x1a.ledger.v1.CategorySummaryR\n" +
+	"categories\"\x88\x01\n" +
+	"\x11GetSummaryRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12.\n" +
+	"\x04from\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
+	"\x02to\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\"B\n" +
+	"\x12GetSummaryResponse\x12,\n" +
+	"\asummary\x18\x01 \x01(\v2\x12.ledger.v1.SummaryR\asummary2\xb0\x03\n" +
 	"\rLedgerService\x12^\n" +
 	"\x11CreateTransaction\x12#.ledger.v1.CreateTransactionRequest\x1a$.ledger.v1.CreateTransactionResponse\x12X\n" +
 	"\x0fGetTransactions\x12!.ledger.v1.GetTransactionsRequest\x1a\".ledger.v1.GetTransactionsResponse\x12O\n" +
 	"\fCreateBudget\x12\x1e.ledger.v1.CreateBudgetRequest\x1a\x1f.ledger.v1.CreateBudgetResponse\x12I\n" +
 	"\n" +
-	"GetBudgets\x12\x1c.ledger.v1.GetBudgetsRequest\x1a\x1d.ledger.v1.GetBudgetsResponseBTZRgithub.com/Vlad777-bit/personal-finance-analytics/shared/gen/go/ledger/v1;ledgerv1b\x06proto3"
+	"GetBudgets\x12\x1c.ledger.v1.GetBudgetsRequest\x1a\x1d.ledger.v1.GetBudgetsResponse\x12I\n" +
+	"\n" +
+	"GetSummary\x12\x1c.ledger.v1.GetSummaryRequest\x1a\x1d.ledger.v1.GetSummaryResponseBTZRgithub.com/Vlad777-bit/personal-finance-analytics/shared/gen/go/ledger/v1;ledgerv1b\x06proto3"
 
 var (
 	file_ledger_v1_ledger_proto_rawDescOnce sync.Once
@@ -671,7 +959,7 @@ func file_ledger_v1_ledger_proto_rawDescGZIP() []byte {
 	return file_ledger_v1_ledger_proto_rawDescData
 }
 
-var file_ledger_v1_ledger_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_ledger_v1_ledger_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_ledger_v1_ledger_proto_goTypes = []any{
 	(*Transaction)(nil),               // 0: ledger.v1.Transaction
 	(*CreateTransactionRequest)(nil),  // 1: ledger.v1.CreateTransactionRequest
@@ -683,31 +971,43 @@ var file_ledger_v1_ledger_proto_goTypes = []any{
 	(*CreateBudgetResponse)(nil),      // 7: ledger.v1.CreateBudgetResponse
 	(*GetBudgetsRequest)(nil),         // 8: ledger.v1.GetBudgetsRequest
 	(*GetBudgetsResponse)(nil),        // 9: ledger.v1.GetBudgetsResponse
-	(*timestamppb.Timestamp)(nil),     // 10: google.protobuf.Timestamp
+	(*CategorySummary)(nil),           // 10: ledger.v1.CategorySummary
+	(*Summary)(nil),                   // 11: ledger.v1.Summary
+	(*GetSummaryRequest)(nil),         // 12: ledger.v1.GetSummaryRequest
+	(*GetSummaryResponse)(nil),        // 13: ledger.v1.GetSummaryResponse
+	(*timestamppb.Timestamp)(nil),     // 14: google.protobuf.Timestamp
 }
 var file_ledger_v1_ledger_proto_depIdxs = []int32{
-	10, // 0: ledger.v1.Transaction.occurred_at:type_name -> google.protobuf.Timestamp
-	10, // 1: ledger.v1.Transaction.created_at:type_name -> google.protobuf.Timestamp
-	10, // 2: ledger.v1.CreateTransactionRequest.occurred_at:type_name -> google.protobuf.Timestamp
+	14, // 0: ledger.v1.Transaction.occurred_at:type_name -> google.protobuf.Timestamp
+	14, // 1: ledger.v1.Transaction.created_at:type_name -> google.protobuf.Timestamp
+	14, // 2: ledger.v1.CreateTransactionRequest.occurred_at:type_name -> google.protobuf.Timestamp
 	0,  // 3: ledger.v1.CreateTransactionResponse.transaction:type_name -> ledger.v1.Transaction
-	10, // 4: ledger.v1.GetTransactionsRequest.from:type_name -> google.protobuf.Timestamp
-	10, // 5: ledger.v1.GetTransactionsRequest.to:type_name -> google.protobuf.Timestamp
+	14, // 4: ledger.v1.GetTransactionsRequest.from:type_name -> google.protobuf.Timestamp
+	14, // 5: ledger.v1.GetTransactionsRequest.to:type_name -> google.protobuf.Timestamp
 	0,  // 6: ledger.v1.GetTransactionsResponse.transactions:type_name -> ledger.v1.Transaction
 	5,  // 7: ledger.v1.CreateBudgetResponse.budget:type_name -> ledger.v1.Budget
 	5,  // 8: ledger.v1.GetBudgetsResponse.budgets:type_name -> ledger.v1.Budget
-	1,  // 9: ledger.v1.LedgerService.CreateTransaction:input_type -> ledger.v1.CreateTransactionRequest
-	3,  // 10: ledger.v1.LedgerService.GetTransactions:input_type -> ledger.v1.GetTransactionsRequest
-	6,  // 11: ledger.v1.LedgerService.CreateBudget:input_type -> ledger.v1.CreateBudgetRequest
-	8,  // 12: ledger.v1.LedgerService.GetBudgets:input_type -> ledger.v1.GetBudgetsRequest
-	2,  // 13: ledger.v1.LedgerService.CreateTransaction:output_type -> ledger.v1.CreateTransactionResponse
-	4,  // 14: ledger.v1.LedgerService.GetTransactions:output_type -> ledger.v1.GetTransactionsResponse
-	7,  // 15: ledger.v1.LedgerService.CreateBudget:output_type -> ledger.v1.CreateBudgetResponse
-	9,  // 16: ledger.v1.LedgerService.GetBudgets:output_type -> ledger.v1.GetBudgetsResponse
-	13, // [13:17] is the sub-list for method output_type
-	9,  // [9:13] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	14, // 9: ledger.v1.Summary.from:type_name -> google.protobuf.Timestamp
+	14, // 10: ledger.v1.Summary.to:type_name -> google.protobuf.Timestamp
+	10, // 11: ledger.v1.Summary.categories:type_name -> ledger.v1.CategorySummary
+	14, // 12: ledger.v1.GetSummaryRequest.from:type_name -> google.protobuf.Timestamp
+	14, // 13: ledger.v1.GetSummaryRequest.to:type_name -> google.protobuf.Timestamp
+	11, // 14: ledger.v1.GetSummaryResponse.summary:type_name -> ledger.v1.Summary
+	1,  // 15: ledger.v1.LedgerService.CreateTransaction:input_type -> ledger.v1.CreateTransactionRequest
+	3,  // 16: ledger.v1.LedgerService.GetTransactions:input_type -> ledger.v1.GetTransactionsRequest
+	6,  // 17: ledger.v1.LedgerService.CreateBudget:input_type -> ledger.v1.CreateBudgetRequest
+	8,  // 18: ledger.v1.LedgerService.GetBudgets:input_type -> ledger.v1.GetBudgetsRequest
+	12, // 19: ledger.v1.LedgerService.GetSummary:input_type -> ledger.v1.GetSummaryRequest
+	2,  // 20: ledger.v1.LedgerService.CreateTransaction:output_type -> ledger.v1.CreateTransactionResponse
+	4,  // 21: ledger.v1.LedgerService.GetTransactions:output_type -> ledger.v1.GetTransactionsResponse
+	7,  // 22: ledger.v1.LedgerService.CreateBudget:output_type -> ledger.v1.CreateBudgetResponse
+	9,  // 23: ledger.v1.LedgerService.GetBudgets:output_type -> ledger.v1.GetBudgetsResponse
+	13, // 24: ledger.v1.LedgerService.GetSummary:output_type -> ledger.v1.GetSummaryResponse
+	20, // [20:25] is the sub-list for method output_type
+	15, // [15:20] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_ledger_v1_ledger_proto_init() }
@@ -721,7 +1021,7 @@ func file_ledger_v1_ledger_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ledger_v1_ledger_proto_rawDesc), len(file_ledger_v1_ledger_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

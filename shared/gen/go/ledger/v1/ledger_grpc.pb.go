@@ -23,6 +23,7 @@ const (
 	LedgerService_GetTransactions_FullMethodName   = "/ledger.v1.LedgerService/GetTransactions"
 	LedgerService_CreateBudget_FullMethodName      = "/ledger.v1.LedgerService/CreateBudget"
 	LedgerService_GetBudgets_FullMethodName        = "/ledger.v1.LedgerService/GetBudgets"
+	LedgerService_GetSummary_FullMethodName        = "/ledger.v1.LedgerService/GetSummary"
 )
 
 // LedgerServiceClient is the client API for LedgerService service.
@@ -33,6 +34,7 @@ type LedgerServiceClient interface {
 	GetTransactions(ctx context.Context, in *GetTransactionsRequest, opts ...grpc.CallOption) (*GetTransactionsResponse, error)
 	CreateBudget(ctx context.Context, in *CreateBudgetRequest, opts ...grpc.CallOption) (*CreateBudgetResponse, error)
 	GetBudgets(ctx context.Context, in *GetBudgetsRequest, opts ...grpc.CallOption) (*GetBudgetsResponse, error)
+	GetSummary(ctx context.Context, in *GetSummaryRequest, opts ...grpc.CallOption) (*GetSummaryResponse, error)
 }
 
 type ledgerServiceClient struct {
@@ -83,6 +85,16 @@ func (c *ledgerServiceClient) GetBudgets(ctx context.Context, in *GetBudgetsRequ
 	return out, nil
 }
 
+func (c *ledgerServiceClient) GetSummary(ctx context.Context, in *GetSummaryRequest, opts ...grpc.CallOption) (*GetSummaryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSummaryResponse)
+	err := c.cc.Invoke(ctx, LedgerService_GetSummary_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LedgerServiceServer is the server API for LedgerService service.
 // All implementations must embed UnimplementedLedgerServiceServer
 // for forward compatibility.
@@ -91,6 +103,7 @@ type LedgerServiceServer interface {
 	GetTransactions(context.Context, *GetTransactionsRequest) (*GetTransactionsResponse, error)
 	CreateBudget(context.Context, *CreateBudgetRequest) (*CreateBudgetResponse, error)
 	GetBudgets(context.Context, *GetBudgetsRequest) (*GetBudgetsResponse, error)
+	GetSummary(context.Context, *GetSummaryRequest) (*GetSummaryResponse, error)
 	mustEmbedUnimplementedLedgerServiceServer()
 }
 
@@ -112,6 +125,9 @@ func (UnimplementedLedgerServiceServer) CreateBudget(context.Context, *CreateBud
 }
 func (UnimplementedLedgerServiceServer) GetBudgets(context.Context, *GetBudgetsRequest) (*GetBudgetsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBudgets not implemented")
+}
+func (UnimplementedLedgerServiceServer) GetSummary(context.Context, *GetSummaryRequest) (*GetSummaryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSummary not implemented")
 }
 func (UnimplementedLedgerServiceServer) mustEmbedUnimplementedLedgerServiceServer() {}
 func (UnimplementedLedgerServiceServer) testEmbeddedByValue()                       {}
@@ -206,6 +222,24 @@ func _LedgerService_GetBudgets_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LedgerService_GetSummary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSummaryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LedgerServiceServer).GetSummary(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LedgerService_GetSummary_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LedgerServiceServer).GetSummary(ctx, req.(*GetSummaryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LedgerService_ServiceDesc is the grpc.ServiceDesc for LedgerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -228,6 +262,10 @@ var LedgerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetBudgets",
 			Handler:    _LedgerService_GetBudgets_Handler,
+		},
+		{
+			MethodName: "GetSummary",
+			Handler:    _LedgerService_GetSummary_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -148,6 +148,40 @@ func TestServer_GetBudgets(t *testing.T) {
 	require.Equal(t, int64(50000), response.GetBudgets()[0].GetLimitAmount())
 }
 
+func TestServer_GetSummary(t *testing.T) {
+	t.Parallel()
+
+	from := time.Date(2026, time.October, 1, 0, 0, 0, 0, time.UTC)
+	to := from.AddDate(0, 1, 0)
+	ledgerService := servicemocks.NewLedgerService(t)
+	ledgerService.EXPECT().GetSummary(
+		mock.Anything,
+		service.GetSummaryInput{UserID: "user-1", From: from, To: to},
+	).Return(domain.Summary{
+		UserID: "user-1", From: from, To: to, TotalSpent: 600,
+		Categories: []domain.CategorySummary{
+			{
+				Category: "food", Spent: 600, BudgetLimit: 500,
+				BudgetConfigured: true, Remaining: -100, BudgetExceeded: true,
+			},
+		},
+	}, nil)
+
+	response, err := grpctransport.New(ledgerService).GetSummary(
+		t.Context(),
+		&ledgerv1.GetSummaryRequest{
+			UserId: "user-1", From: timestamppb.New(from), To: timestamppb.New(to),
+		},
+	)
+	require.NoError(t, err)
+	require.Equal(t, "user-1", response.GetSummary().GetUserId())
+	require.Equal(t, int64(600), response.GetSummary().GetTotalSpent())
+	require.True(t, response.GetSummary().GetFrom().AsTime().Equal(from))
+	require.Len(t, response.GetSummary().GetCategories(), 1)
+	require.Equal(t, int64(-100), response.GetSummary().GetCategories()[0].GetRemaining())
+	require.True(t, response.GetSummary().GetCategories()[0].GetBudgetExceeded())
+}
+
 func TestServer_RejectsNilRequest(t *testing.T) {
 	t.Parallel()
 
@@ -157,11 +191,46 @@ func TestServer_RejectsNilRequest(t *testing.T) {
 	_, budgetErr := server.CreateBudget(context.Background(), nil)
 	_, getTransactionsErr := server.GetTransactions(context.Background(), nil)
 	_, getBudgetsErr := server.GetBudgets(context.Background(), nil)
+	_, getSummaryErr := server.GetSummary(context.Background(), nil)
 
 	require.Equal(t, codes.InvalidArgument, status.Code(transactionErr))
 	require.Equal(t, codes.InvalidArgument, status.Code(budgetErr))
 	require.Equal(t, codes.InvalidArgument, status.Code(getTransactionsErr))
 	require.Equal(t, codes.InvalidArgument, status.Code(getBudgetsErr))
+	require.Equal(t, codes.InvalidArgument, status.Code(getSummaryErr))
+}
+
+func TestServer_GetSummaryRejectsInvalidTimestamp(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		request *ledgerv1.GetSummaryRequest
+	}{
+		{
+			name: "invalid from",
+			request: &ledgerv1.GetSummaryRequest{
+				From: &timestamppb.Timestamp{Seconds: 253402300800},
+			},
+		},
+		{
+			name: "invalid to",
+			request: &ledgerv1.GetSummaryRequest{
+				To: &timestamppb.Timestamp{Seconds: 253402300800},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			server := grpctransport.New(servicemocks.NewLedgerService(t))
+			_, err := server.GetSummary(t.Context(), tt.request)
+
+			require.Equal(t, codes.InvalidArgument, status.Code(err))
+		})
+	}
 }
 
 func TestServer_GetTransactionsRejectsInvalidTimestamp(t *testing.T) {

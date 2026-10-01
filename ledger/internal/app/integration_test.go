@@ -156,6 +156,25 @@ func TestLedgerGRPC(t *testing.T) {
 		)
 	})
 
+	t.Run("get summary", func(t *testing.T) {
+		response, callErr := client.GetSummary(
+			rpcContext,
+			&ledgerv1.GetSummaryRequest{
+				UserId: testGRPCUserID,
+				From:   timestamppb.New(occurredAt.Add(-time.Hour)),
+				To:     timestamppb.New(occurredAt.Add(time.Hour)),
+			},
+		)
+		require.NoError(t, callErr)
+		require.Equal(t, int64(2000), response.GetSummary().GetTotalSpent())
+		require.Len(t, response.GetSummary().GetCategories(), 1)
+		category := response.GetSummary().GetCategories()[0]
+		require.Equal(t, testGRPCCategory, category.GetCategory())
+		require.Equal(t, int64(1000), category.GetRemaining())
+		require.True(t, category.GetBudgetConfigured())
+		require.False(t, category.GetBudgetExceeded())
+	})
+
 	t.Run("budget exceeded", func(t *testing.T) {
 		_, callErr := client.CreateTransaction(
 			rpcContext,
