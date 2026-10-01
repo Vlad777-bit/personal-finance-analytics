@@ -184,11 +184,8 @@ func TestService_InvalidatesSummaryCache(t *testing.T) {
 		}
 		transactionRepository := repositorymocks.NewTransactionRepository(t)
 		budgetRepository := repositorymocks.NewBudgetRepository(t)
-		budgetRepository.EXPECT().
-			GetByCategory(mock.Anything, "user-1", "food").
-			Return(domain.Budget{}, domain.ErrBudgetNotFound)
 		transactionRepository.EXPECT().
-			Create(mock.Anything, mock.AnythingOfType("domain.Transaction")).
+			CreateWithinBudget(mock.Anything, mock.AnythingOfType("domain.Transaction")).
 			Return(domain.Transaction{UserID: "user-1"}, nil)
 		ledgerService := newTestLedgerService(
 			transactionRepository,

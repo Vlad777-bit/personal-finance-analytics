@@ -27,46 +27,27 @@ func TestService_CreateTransaction(t *testing.T) {
 		0,
 		time.UTC,
 	)
-
 	errRepository := errors.New("repository error")
+	validInput := service.CreateTransactionInput{
+		UserID:      "user-1",
+		Amount:      1500,
+		Category:    "food",
+		Description: "lunch",
+		OccurredAt:  transactionDate,
+	}
 
 	tests := []struct {
 		name    string
 		input   service.CreateTransactionInput
-		prepare func(
-			transactionRepository *mocks.TransactionRepository,
-			budgetRepository *mocks.BudgetRepository,
-		)
+		prepare func(*mocks.TransactionRepository)
 		wantErr error
 	}{
 		{
-			name: "success without budget",
-			input: service.CreateTransactionInput{
-				UserID:      "user-1",
-				Amount:      1500,
-				Category:    "food",
-				Description: "lunch",
-				OccurredAt:  transactionDate,
-			},
-			prepare: func(
-				transactionRepository *mocks.TransactionRepository,
-				budgetRepository *mocks.BudgetRepository,
-			) {
-				budgetRepository.
-					EXPECT().
-					GetByCategory(
-						mock.Anything,
-						"user-1",
-						"food",
-					).
-					Return(
-						domain.Budget{},
-						domain.ErrBudgetNotFound,
-					)
-
-				transactionRepository.
-					EXPECT().
-					Create(
+			name:  "success",
+			input: validInput,
+			prepare: func(transactionRepository *mocks.TransactionRepository) {
+				transactionRepository.EXPECT().
+					CreateWithinBudget(
 						mock.Anything,
 						mock.MatchedBy(func(transaction domain.Transaction) bool {
 							return transaction.UserID == "user-1" &&
@@ -76,290 +57,41 @@ func TestService_CreateTransaction(t *testing.T) {
 								transaction.OccurredAt.Equal(transactionDate)
 						}),
 					).
-					Return(
-						domain.Transaction{
-							ID:          "transaction-1",
-							UserID:      "user-1",
-							Amount:      1500,
-							Category:    "food",
-							Description: "lunch",
-							OccurredAt:  transactionDate,
-						},
-						nil,
-					)
+					Return(domain.Transaction{
+						ID:          "transaction-1",
+						UserID:      "user-1",
+						Amount:      1500,
+						Category:    "food",
+						Description: "lunch",
+						OccurredAt:  transactionDate,
+					}, nil)
 			},
-		},
-		{
-			name: "success with budget",
-			input: service.CreateTransactionInput{
-				UserID:     "user-1",
-				Amount:     1500,
-				Category:   "food",
-				OccurredAt: transactionDate,
-			},
-			prepare: func(
-				transactionRepository *mocks.TransactionRepository,
-				budgetRepository *mocks.BudgetRepository,
-			) {
-				budgetRepository.
-					EXPECT().
-					GetByCategory(
-						mock.Anything,
-						"user-1",
-						"food",
-					).
-					Return(
-						domain.Budget{
-							UserID:   "user-1",
-							Category: "food",
-							Limit:    10000,
-						},
-						nil,
-					)
-
-				transactionRepository.
-					EXPECT().
-					SumByCategoryAndPeriod(
-						mock.Anything,
-						"user-1",
-						"food",
-						mock.Anything,
-						mock.Anything,
-					).
-					Return(int64(5000), nil)
-
-				transactionRepository.
-					EXPECT().
-					Create(
-						mock.Anything,
-						mock.AnythingOfType("domain.Transaction"),
-					).
-					Return(
-						domain.Transaction{
-							ID:         "transaction-1",
-							UserID:     "user-1",
-							Amount:     1500,
-							Category:   "food",
-							OccurredAt: transactionDate,
-						},
-						nil,
-					)
-			},
-		},
-		{
-			name: "success when budget exactly reached",
-			input: service.CreateTransactionInput{
-				UserID:     "user-1",
-				Amount:     5000,
-				Category:   "food",
-				OccurredAt: transactionDate,
-			},
-			prepare: func(
-				transactionRepository *mocks.TransactionRepository,
-				budgetRepository *mocks.BudgetRepository,
-			) {
-				budgetRepository.
-					EXPECT().
-					GetByCategory(
-						mock.Anything,
-						"user-1",
-						"food",
-					).
-					Return(
-						domain.Budget{
-							UserID:   "user-1",
-							Category: "food",
-							Limit:    10000,
-						},
-						nil,
-					)
-
-				transactionRepository.
-					EXPECT().
-					SumByCategoryAndPeriod(
-						mock.Anything,
-						"user-1",
-						"food",
-						mock.Anything,
-						mock.Anything,
-					).
-					Return(int64(5000), nil)
-
-				transactionRepository.
-					EXPECT().
-					Create(
-						mock.Anything,
-						mock.AnythingOfType("domain.Transaction"),
-					).
-					Return(
-						domain.Transaction{
-							ID:         "transaction-1",
-							UserID:     "user-1",
-							Amount:     5000,
-							Category:   "food",
-							OccurredAt: transactionDate,
-						},
-						nil,
-					)
-			},
-		},
-		{
-			name: "budget exceeded",
-			input: service.CreateTransactionInput{
-				UserID:     "user-1",
-				Amount:     5001,
-				Category:   "food",
-				OccurredAt: transactionDate,
-			},
-			prepare: func(
-				transactionRepository *mocks.TransactionRepository,
-				budgetRepository *mocks.BudgetRepository,
-			) {
-				budgetRepository.
-					EXPECT().
-					GetByCategory(
-						mock.Anything,
-						"user-1",
-						"food",
-					).
-					Return(
-						domain.Budget{
-							UserID:   "user-1",
-							Category: "food",
-							Limit:    10000,
-						},
-						nil,
-					)
-
-				transactionRepository.
-					EXPECT().
-					SumByCategoryAndPeriod(
-						mock.Anything,
-						"user-1",
-						"food",
-						mock.Anything,
-						mock.Anything,
-					).
-					Return(int64(5000), nil)
-			},
-			wantErr: domain.ErrBudgetExceeded,
 		},
 		{
 			name: "invalid transaction",
 			input: service.CreateTransactionInput{
-				UserID:     "user-1",
-				Amount:     0,
-				Category:   "food",
-				OccurredAt: transactionDate,
+				UserID: "user-1", Amount: 0, Category: "food", OccurredAt: transactionDate,
 			},
-			prepare: func(
-				_ *mocks.TransactionRepository,
-				_ *mocks.BudgetRepository,
-			) {
-			},
+			prepare: func(*mocks.TransactionRepository) {},
 			wantErr: domain.ErrInvalidAmount,
 		},
 		{
-			name: "budget repository error",
-			input: service.CreateTransactionInput{
-				UserID:     "user-1",
-				Amount:     1500,
-				Category:   "food",
-				OccurredAt: transactionDate,
+			name:  "budget exceeded",
+			input: validInput,
+			prepare: func(transactionRepository *mocks.TransactionRepository) {
+				transactionRepository.EXPECT().
+					CreateWithinBudget(mock.Anything, mock.AnythingOfType("domain.Transaction")).
+					Return(domain.Transaction{}, domain.ErrBudgetExceeded)
 			},
-			prepare: func(
-				_ *mocks.TransactionRepository,
-				budgetRepository *mocks.BudgetRepository,
-			) {
-				budgetRepository.
-					EXPECT().
-					GetByCategory(
-						mock.Anything,
-						"user-1",
-						"food",
-					).
-					Return(
-						domain.Budget{},
-						errRepository,
-					)
-			},
-			wantErr: errRepository,
+			wantErr: domain.ErrBudgetExceeded,
 		},
 		{
-			name: "sum repository error",
-			input: service.CreateTransactionInput{
-				UserID:     "user-1",
-				Amount:     1500,
-				Category:   "food",
-				OccurredAt: transactionDate,
-			},
-			prepare: func(
-				transactionRepository *mocks.TransactionRepository,
-				budgetRepository *mocks.BudgetRepository,
-			) {
-				budgetRepository.
-					EXPECT().
-					GetByCategory(
-						mock.Anything,
-						"user-1",
-						"food",
-					).
-					Return(
-						domain.Budget{
-							UserID:   "user-1",
-							Category: "food",
-							Limit:    10000,
-						},
-						nil,
-					)
-
-				transactionRepository.
-					EXPECT().
-					SumByCategoryAndPeriod(
-						mock.Anything,
-						"user-1",
-						"food",
-						mock.Anything,
-						mock.Anything,
-					).
-					Return(int64(0), errRepository)
-			},
-			wantErr: errRepository,
-		},
-		{
-			name: "create repository error",
-			input: service.CreateTransactionInput{
-				UserID:     "user-1",
-				Amount:     1500,
-				Category:   "food",
-				OccurredAt: transactionDate,
-			},
-			prepare: func(
-				transactionRepository *mocks.TransactionRepository,
-				budgetRepository *mocks.BudgetRepository,
-			) {
-				budgetRepository.
-					EXPECT().
-					GetByCategory(
-						mock.Anything,
-						"user-1",
-						"food",
-					).
-					Return(
-						domain.Budget{},
-						domain.ErrBudgetNotFound,
-					)
-
-				transactionRepository.
-					EXPECT().
-					Create(
-						mock.Anything,
-						mock.AnythingOfType("domain.Transaction"),
-					).
-					Return(
-						domain.Transaction{},
-						errRepository,
-					)
+			name:  "repository error",
+			input: validInput,
+			prepare: func(transactionRepository *mocks.TransactionRepository) {
+				transactionRepository.EXPECT().
+					CreateWithinBudget(mock.Anything, mock.AnythingOfType("domain.Transaction")).
+					Return(domain.Transaction{}, errRepository)
 			},
 			wantErr: errRepository,
 		},
@@ -370,25 +102,14 @@ func TestService_CreateTransaction(t *testing.T) {
 			t.Parallel()
 
 			transactionRepository := mocks.NewTransactionRepository(t)
-			budgetRepository := mocks.NewBudgetRepository(t)
-			reportRepository := mocks.NewReportRepository(t)
-
-			tt.prepare(
-				transactionRepository,
-				budgetRepository,
-			)
-
+			tt.prepare(transactionRepository)
 			ledgerService := newTestLedgerService(
 				transactionRepository,
-				budgetRepository,
-				reportRepository,
+				mocks.NewBudgetRepository(t),
+				mocks.NewReportRepository(t),
 			)
 
-			_, err := ledgerService.CreateTransaction(
-				context.Background(),
-				tt.input,
-			)
-
+			_, err := ledgerService.CreateTransaction(context.Background(), tt.input)
 			if tt.wantErr == nil {
 				require.NoError(t, err)
 

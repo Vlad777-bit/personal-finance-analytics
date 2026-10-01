@@ -4,11 +4,20 @@ import (
 	"context"
 	"fmt"
 
+	db "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/database"
 	"github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/domain"
 )
 
 func (r *Repository) Create(
 	ctx context.Context,
+	transaction domain.Transaction,
+) (domain.Transaction, error) {
+	return create(ctx, r.db, transaction)
+}
+
+func create(
+	ctx context.Context,
+	database db.QueryExecutor,
 	transaction domain.Transaction,
 ) (domain.Transaction, error) {
 	const query = `
@@ -32,7 +41,7 @@ func (r *Repository) Create(
 
 	var savedTransaction domain.Transaction
 
-	err := r.db.QueryRow(
+	err := database.QueryRow(
 		ctx,
 		query,
 		transaction.UserID,

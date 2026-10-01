@@ -1,6 +1,9 @@
 package domain
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 type Budget struct {
 	ID       string
@@ -35,4 +38,19 @@ func NewBudget(params NewBudgetParams) (Budget, error) {
 		Category: category,
 		Limit:    params.Limit,
 	}, nil
+}
+
+func (b Budget) ValidateSpending(spent, amount int64) error {
+	if amount > b.Limit || spent > b.Limit-amount {
+		return fmt.Errorf(
+			"%w: category=%s limit=%d spent=%d amount=%d",
+			ErrBudgetExceeded,
+			b.Category,
+			b.Limit,
+			spent,
+			amount,
+		)
+	}
+
+	return nil
 }

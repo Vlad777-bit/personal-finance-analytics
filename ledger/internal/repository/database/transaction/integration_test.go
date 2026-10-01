@@ -4,6 +4,7 @@ package transaction_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	dbpgx "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/database/pgx"
 	"github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/domain"
 	repositorypkg "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository"
+	budgetrepository "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository/database/budget"
 	"github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository/database/testhelper"
 	transactionrepository "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository/database/transaction"
 )
@@ -200,4 +202,110 @@ func TestTransactionRepository(t *testing.T) {
 		require.Empty(t, transactions)
 		require.NotNil(t, transactions)
 	})
+
+	t.Run("concurrent transactions cannot exceed budget", func(t *testing.T) {
+		const (
+			concurrentUserID   = "77777777-7777-7777-7777-777777777777"
+			concurrentCategory = "concurrent-budget"
+		)
+
+		testhelper.CleanupTransactions(t, ctx, client, concurrentUserID)
+		testhelper.CleanupBudget(t, ctx, client, concurrentUserID, concurrentCategory)
+		t.Cleanup(func() {
+			testhelper.CleanupTransactions(
+				t,
+				context.Background(),
+				client,
+				concurrentUserID,
+			)
+			testhelper.CleanupBudget(
+				t,
+				context.Background(),
+				client,
+				concurrentUserID,
+				concurrentCategory,
+			)
+		})
+
+		budgetRepository := budgetrepository.New(client)
+		_, upsertErr := budgetRepository.Upsert(ctx, domain.Budget{
+			UserID: concurrentUserID, Category: concurrentCategory, Limit: 1000,
+		})
+		require.NoError(t, upsertErr)
+
+		start := make(chan struct{})
+		results := make(chan error, 2)
+		for range 2 {
+			go func() {
+				<-start
+				_, createErr := repository.CreateWithinBudget(ctx, domain.Transaction{
+					UserID:     concurrentUserID,
+					Amount:     600,
+					Category:   concurrentCategory,
+					OccurredAt: transactionDate,
+				})
+				results <- createErr
+			}()
+		}
+		close(start)
+
+		var created, rejected int
+		for range 2 {
+			createErr := <-results
+			switch {
+			case createErr == nil:
+				created++
+			case errors.Is(createErr, domain.ErrBudgetExceeded):
+				rejected++
+			default:
+				require.NoError(t, createErr)
+			}
+		}
+
+		require.Equal(t, 1, created)
+		require.Equal(t, 1, rejected)
+
+		from, to := monthPeriod(transactionDate)
+		total, sumErr := repository.SumByCategoryAndPeriod(
+			ctx,
+			concurrentUserID,
+			concurrentCategory,
+			from,
+			to,
+		)
+		require.NoError(t, sumErr)
+		require.Equal(t, int64(600), total)
+
+		_, createErr := repository.CreateWithinBudget(ctx, domain.Transaction{
+			UserID:     concurrentUserID,
+			Amount:     400,
+			Category:   concurrentCategory,
+			OccurredAt: transactionDate,
+		})
+		require.NoError(t, createErr)
+
+		_, createErr = repository.CreateWithinBudget(ctx, domain.Transaction{
+			UserID:     concurrentUserID,
+			Amount:     1,
+			Category:   concurrentCategory,
+			OccurredAt: transactionDate,
+		})
+		require.ErrorIs(t, createErr, domain.ErrBudgetExceeded)
+
+		total, sumErr = repository.SumByCategoryAndPeriod(
+			ctx,
+			concurrentUserID,
+			concurrentCategory,
+			from,
+			to,
+		)
+		require.NoError(t, sumErr)
+		require.Equal(t, int64(1000), total)
+	})
+}
+
+func monthPeriod(value time.Time) (time.Time, time.Time) {
+	from := time.Date(value.Year(), value.Month(), 1, 0, 0, 0, 0, value.Location())
+
+	return from, from.AddDate(0, 1, 0)
 }

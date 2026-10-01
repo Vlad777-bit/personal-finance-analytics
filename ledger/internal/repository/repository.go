@@ -8,6 +8,11 @@ import (
 )
 
 type TransactionRepository interface {
+	CreateWithinBudget(
+		ctx context.Context,
+		transaction domain.Transaction,
+	) (domain.Transaction, error)
+
 	Create(
 		ctx context.Context,
 		transaction domain.Transaction,

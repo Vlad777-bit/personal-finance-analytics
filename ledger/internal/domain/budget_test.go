@@ -2,7 +2,10 @@ package domain_test
 
 import (
 	"errors"
+	"math"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/domain"
 )
@@ -67,6 +70,38 @@ func TestNewBudget(t *testing.T) {
 			if !errors.Is(err, tt.wantErr) {
 				t.Fatalf("expected %v, got %v", tt.wantErr, err)
 			}
+		})
+	}
+}
+
+func TestBudget_ValidateSpending(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		spent   int64
+		amount  int64
+		wantErr error
+	}{
+		{name: "below limit", spent: 400, amount: 500},
+		{name: "exact limit", spent: 400, amount: 600},
+		{name: "amount exceeds limit", amount: 1001, wantErr: domain.ErrBudgetExceeded},
+		{name: "total exceeds limit", spent: 400, amount: 601, wantErr: domain.ErrBudgetExceeded},
+		{
+			name:    "addition overflow cannot bypass limit",
+			spent:   900,
+			amount:  math.MaxInt64,
+			wantErr: domain.ErrBudgetExceeded,
+		},
+	}
+
+	budget := domain.Budget{Category: "food", Limit: 1000}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := budget.ValidateSpending(tt.spent, tt.amount)
+			require.ErrorIs(t, err, tt.wantErr)
 		})
 	}
 }

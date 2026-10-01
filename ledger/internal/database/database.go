@@ -5,7 +5,10 @@ import (
 	"errors"
 )
 
-var ErrNoRows = errors.New("no rows")
+var (
+	ErrNoRows   = errors.New("no rows")
+	ErrTxClosed = errors.New("transaction is closed")
+)
 
 type Row interface {
 	Scan(dest ...any) error
@@ -22,7 +25,7 @@ type Result interface {
 	RowsAffected() int64
 }
 
-type DB interface {
+type QueryExecutor interface {
 	Query(
 		ctx context.Context,
 		query string,
@@ -40,6 +43,17 @@ type DB interface {
 		query string,
 		args ...any,
 	) (Result, error)
+}
+
+type Tx interface {
+	QueryExecutor
+	Commit(ctx context.Context) error
+	Rollback(ctx context.Context) error
+}
+
+type DB interface {
+	QueryExecutor
+	Begin(ctx context.Context) (Tx, error)
 
 	Close()
 }

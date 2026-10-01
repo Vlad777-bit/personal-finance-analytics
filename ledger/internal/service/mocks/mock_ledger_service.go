@@ -140,47 +140,6 @@ func (_c *LedgerService_CreateTransaction_Call) RunAndReturn(run func(context.Co
 	return _c
 }
 
-// GetTransactions provides a mock function with given fields: ctx, input
-func (_m *LedgerService) GetTransactions(ctx context.Context, input service.GetTransactionsInput) ([]domain.Transaction, error) {
-	ret := _m.Called(ctx, input)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetTransactions")
-	}
-
-	var r0 []domain.Transaction
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.GetTransactionsInput) ([]domain.Transaction, error)); ok {
-		return rf(ctx, input)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.GetTransactionsInput) []domain.Transaction); ok {
-		r0 = rf(ctx, input)
-	} else if ret.Get(0) != nil {
-		r0 = ret.Get(0).([]domain.Transaction)
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, service.GetTransactionsInput) error); ok {
-		r1 = rf(ctx, input)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-type LedgerService_GetTransactions_Call struct {
-	*mock.Call
-}
-
-func (_e *LedgerService_Expecter) GetTransactions(ctx interface{}, input interface{}) *LedgerService_GetTransactions_Call {
-	return &LedgerService_GetTransactions_Call{Call: _e.mock.On("GetTransactions", ctx, input)}
-}
-
-func (_c *LedgerService_GetTransactions_Call) Return(_a0 []domain.Transaction, _a1 error) *LedgerService_GetTransactions_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
 // GetBudgets provides a mock function with given fields: ctx, input
 func (_m *LedgerService) GetBudgets(ctx context.Context, input service.GetBudgetsInput) ([]domain.Budget, error) {
 	ret := _m.Called(ctx, input)
@@ -196,8 +155,10 @@ func (_m *LedgerService) GetBudgets(ctx context.Context, input service.GetBudget
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, service.GetBudgetsInput) []domain.Budget); ok {
 		r0 = rf(ctx, input)
-	} else if ret.Get(0) != nil {
-		r0 = ret.Get(0).([]domain.Budget)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]domain.Budget)
+		}
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, service.GetBudgetsInput) error); ok {
@@ -209,12 +170,23 @@ func (_m *LedgerService) GetBudgets(ctx context.Context, input service.GetBudget
 	return r0, r1
 }
 
+// LedgerService_GetBudgets_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetBudgets'
 type LedgerService_GetBudgets_Call struct {
 	*mock.Call
 }
 
+// GetBudgets is a helper method to define mock.On call
+//   - ctx context.Context
+//   - input service.GetBudgetsInput
 func (_e *LedgerService_Expecter) GetBudgets(ctx interface{}, input interface{}) *LedgerService_GetBudgets_Call {
 	return &LedgerService_GetBudgets_Call{Call: _e.mock.On("GetBudgets", ctx, input)}
+}
+
+func (_c *LedgerService_GetBudgets_Call) Run(run func(ctx context.Context, input service.GetBudgetsInput)) *LedgerService_GetBudgets_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(service.GetBudgetsInput))
+	})
+	return _c
 }
 
 func (_c *LedgerService_GetBudgets_Call) Return(_a0 []domain.Budget, _a1 error) *LedgerService_GetBudgets_Call {
@@ -222,9 +194,15 @@ func (_c *LedgerService_GetBudgets_Call) Return(_a0 []domain.Budget, _a1 error) 
 	return _c
 }
 
+func (_c *LedgerService_GetBudgets_Call) RunAndReturn(run func(context.Context, service.GetBudgetsInput) ([]domain.Budget, error)) *LedgerService_GetBudgets_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetSummary provides a mock function with given fields: ctx, input
 func (_m *LedgerService) GetSummary(ctx context.Context, input service.GetSummaryInput) (domain.Summary, error) {
 	ret := _m.Called(ctx, input)
+
 	if len(ret) == 0 {
 		panic("no return value specified for GetSummary")
 	}
@@ -239,21 +217,101 @@ func (_m *LedgerService) GetSummary(ctx context.Context, input service.GetSummar
 	} else {
 		r0 = ret.Get(0).(domain.Summary)
 	}
-	r1 = ret.Error(1)
+
+	if rf, ok := ret.Get(1).(func(context.Context, service.GetSummaryInput) error); ok {
+		r1 = rf(ctx, input)
+	} else {
+		r1 = ret.Error(1)
+	}
 
 	return r0, r1
 }
 
+// LedgerService_GetSummary_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetSummary'
 type LedgerService_GetSummary_Call struct {
 	*mock.Call
 }
 
+// GetSummary is a helper method to define mock.On call
+//   - ctx context.Context
+//   - input service.GetSummaryInput
 func (_e *LedgerService_Expecter) GetSummary(ctx interface{}, input interface{}) *LedgerService_GetSummary_Call {
 	return &LedgerService_GetSummary_Call{Call: _e.mock.On("GetSummary", ctx, input)}
 }
 
+func (_c *LedgerService_GetSummary_Call) Run(run func(ctx context.Context, input service.GetSummaryInput)) *LedgerService_GetSummary_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(service.GetSummaryInput))
+	})
+	return _c
+}
+
 func (_c *LedgerService_GetSummary_Call) Return(_a0 domain.Summary, _a1 error) *LedgerService_GetSummary_Call {
 	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *LedgerService_GetSummary_Call) RunAndReturn(run func(context.Context, service.GetSummaryInput) (domain.Summary, error)) *LedgerService_GetSummary_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetTransactions provides a mock function with given fields: ctx, input
+func (_m *LedgerService) GetTransactions(ctx context.Context, input service.GetTransactionsInput) ([]domain.Transaction, error) {
+	ret := _m.Called(ctx, input)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTransactions")
+	}
+
+	var r0 []domain.Transaction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, service.GetTransactionsInput) ([]domain.Transaction, error)); ok {
+		return rf(ctx, input)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, service.GetTransactionsInput) []domain.Transaction); ok {
+		r0 = rf(ctx, input)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]domain.Transaction)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, service.GetTransactionsInput) error); ok {
+		r1 = rf(ctx, input)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// LedgerService_GetTransactions_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTransactions'
+type LedgerService_GetTransactions_Call struct {
+	*mock.Call
+}
+
+// GetTransactions is a helper method to define mock.On call
+//   - ctx context.Context
+//   - input service.GetTransactionsInput
+func (_e *LedgerService_Expecter) GetTransactions(ctx interface{}, input interface{}) *LedgerService_GetTransactions_Call {
+	return &LedgerService_GetTransactions_Call{Call: _e.mock.On("GetTransactions", ctx, input)}
+}
+
+func (_c *LedgerService_GetTransactions_Call) Run(run func(ctx context.Context, input service.GetTransactionsInput)) *LedgerService_GetTransactions_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(service.GetTransactionsInput))
+	})
+	return _c
+}
+
+func (_c *LedgerService_GetTransactions_Call) Return(_a0 []domain.Transaction, _a1 error) *LedgerService_GetTransactions_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *LedgerService_GetTransactions_Call) RunAndReturn(run func(context.Context, service.GetTransactionsInput) ([]domain.Transaction, error)) *LedgerService_GetTransactions_Call {
+	_c.Call.Return(run)
 	return _c
 }
 

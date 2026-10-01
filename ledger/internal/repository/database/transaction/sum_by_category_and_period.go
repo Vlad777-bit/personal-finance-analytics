@@ -4,10 +4,23 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	db "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/database"
 )
 
 func (r *Repository) SumByCategoryAndPeriod(
 	ctx context.Context,
+	userID string,
+	category string,
+	from time.Time,
+	to time.Time,
+) (int64, error) {
+	return sumByCategoryAndPeriod(ctx, r.db, userID, category, from, to)
+}
+
+func sumByCategoryAndPeriod(
+	ctx context.Context,
+	database db.QueryExecutor,
 	userID string,
 	category string,
 	from time.Time,
@@ -24,7 +37,7 @@ func (r *Repository) SumByCategoryAndPeriod(
 
 	var total int64
 
-	err := r.db.QueryRow(
+	err := database.QueryRow(
 		ctx,
 		query,
 		userID,
