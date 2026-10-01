@@ -28,6 +28,10 @@ type fakeLedgerServiceClient struct {
 		context.Context,
 		*ledgerv1.GetTransactionsRequest,
 	) (*ledgerv1.GetTransactionsResponse, error)
+	getBudgets func(
+		context.Context,
+		*ledgerv1.GetBudgetsRequest,
+	) (*ledgerv1.GetBudgetsResponse, error)
 }
 
 func (f *fakeLedgerServiceClient) CreateTransaction(
@@ -55,11 +59,11 @@ func (f *fakeLedgerServiceClient) GetTransactions(
 }
 
 func (f *fakeLedgerServiceClient) GetBudgets(
-	_ context.Context,
-	_ *ledgerv1.GetBudgetsRequest,
+	ctx context.Context,
+	request *ledgerv1.GetBudgetsRequest,
 	_ ...grpc.CallOption,
 ) (*ledgerv1.GetBudgetsResponse, error) {
-	panic("unexpected GetBudgets call")
+	return f.getBudgets(ctx, request)
 }
 
 func TestClient_CreateTransaction(t *testing.T) {
@@ -214,6 +218,90 @@ func TestClient_GetTransactions(t *testing.T) {
 			got, err := client.GetTransactions(t.Context(), GetTransactionsInput{
 				UserID: "user-1", Category: "food", From: from, To: to,
 			})
+
+			require.ErrorIs(t, err, tt.wantErr)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestClient_GetBudgets(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		call    func(*testing.T, *ledgerv1.GetBudgetsRequest) (*ledgerv1.GetBudgetsResponse, error)
+		want    []Budget
+		wantErr error
+	}{
+		{
+			name: "success",
+			call: func(t *testing.T, request *ledgerv1.GetBudgetsRequest) (*ledgerv1.GetBudgetsResponse, error) {
+				t.Helper()
+				require.Equal(t, "user-1", request.GetUserId())
+
+				return &ledgerv1.GetBudgetsResponse{
+					Budgets: []*ledgerv1.Budget{
+						{
+							Id: "budget-1", UserId: "user-1",
+							Category: "food", LimitAmount: 50000,
+						},
+					},
+				}, nil
+			},
+			want: []Budget{
+				{ID: "budget-1", UserID: "user-1", Category: "food", Limit: 50000},
+			},
+		},
+		{
+			name: "empty result",
+			call: func(_ *testing.T, _ *ledgerv1.GetBudgetsRequest) (*ledgerv1.GetBudgetsResponse, error) {
+				return &ledgerv1.GetBudgetsResponse{}, nil
+			},
+			want: []Budget{},
+		},
+		{
+			name: "grpc error",
+			call: func(_ *testing.T, _ *ledgerv1.GetBudgetsRequest) (*ledgerv1.GetBudgetsResponse, error) {
+				return nil, status.Error(codes.InvalidArgument, "user id is required")
+			},
+			wantErr: ErrInvalidArgument,
+		},
+		{
+			name: "nil response",
+			call: func(_ *testing.T, _ *ledgerv1.GetBudgetsRequest) (*ledgerv1.GetBudgetsResponse, error) {
+				return nil, nil
+			},
+			wantErr: ErrInvalidResponse,
+		},
+		{
+			name: "invalid budget",
+			call: func(_ *testing.T, _ *ledgerv1.GetBudgetsRequest) (*ledgerv1.GetBudgetsResponse, error) {
+				return &ledgerv1.GetBudgetsResponse{
+					Budgets: []*ledgerv1.Budget{nil},
+				}, nil
+			},
+			wantErr: ErrInvalidResponse,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			client := &Client{service: &fakeLedgerServiceClient{
+				getBudgets: func(
+					_ context.Context,
+					request *ledgerv1.GetBudgetsRequest,
+				) (*ledgerv1.GetBudgetsResponse, error) {
+					return tt.call(t, request)
+				},
+			}}
+
+			got, err := client.GetBudgets(
+				t.Context(),
+				GetBudgetsInput{UserID: "user-1"},
+			)
 
 			require.ErrorIs(t, err, tt.wantErr)
 			require.Equal(t, tt.want, got)

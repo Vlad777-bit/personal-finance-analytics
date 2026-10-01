@@ -22,15 +22,5 @@ func (c *Client) CreateBudget(
 		return Budget{}, mapError(err)
 	}
 
-	budget := response.GetBudget()
-	if budget == nil {
-		return Budget{}, ErrInvalidResponse
-	}
-
-	return Budget{
-		ID:       budget.GetId(),
-		UserID:   budget.GetUserId(),
-		Category: budget.GetCategory(),
-		Limit:    budget.GetLimitAmount(),
-	}, nil
+	return budgetFromProto(response.GetBudget())
 }

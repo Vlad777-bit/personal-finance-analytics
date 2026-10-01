@@ -45,6 +45,10 @@ type Budget struct {
 	Limit    int64
 }
 
+type GetBudgetsInput struct {
+	UserID string
+}
+
 func transactionFromProto(transaction *ledgerv1.Transaction) (Transaction, error) {
 	if transaction == nil {
 		return Transaction{}, ErrInvalidResponse
@@ -64,5 +68,18 @@ func transactionFromProto(transaction *ledgerv1.Transaction) (Transaction, error
 		Description: transaction.GetDescription(),
 		OccurredAt:  transaction.GetOccurredAt().AsTime(),
 		CreatedAt:   transaction.GetCreatedAt().AsTime(),
+	}, nil
+}
+
+func budgetFromProto(budget *ledgerv1.Budget) (Budget, error) {
+	if budget == nil {
+		return Budget{}, ErrInvalidResponse
+	}
+
+	return Budget{
+		ID:       budget.GetId(),
+		UserID:   budget.GetUserId(),
+		Category: budget.GetCategory(),
+		Limit:    budget.GetLimitAmount(),
 	}, nil
 }
