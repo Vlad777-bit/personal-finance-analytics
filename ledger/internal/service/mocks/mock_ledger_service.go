@@ -181,6 +181,47 @@ func (_c *LedgerService_GetTransactions_Call) Return(_a0 []domain.Transaction, _
 	return _c
 }
 
+// GetBudgets provides a mock function with given fields: ctx, input
+func (_m *LedgerService) GetBudgets(ctx context.Context, input service.GetBudgetsInput) ([]domain.Budget, error) {
+	ret := _m.Called(ctx, input)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetBudgets")
+	}
+
+	var r0 []domain.Budget
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, service.GetBudgetsInput) ([]domain.Budget, error)); ok {
+		return rf(ctx, input)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, service.GetBudgetsInput) []domain.Budget); ok {
+		r0 = rf(ctx, input)
+	} else if ret.Get(0) != nil {
+		r0 = ret.Get(0).([]domain.Budget)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, service.GetBudgetsInput) error); ok {
+		r1 = rf(ctx, input)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+type LedgerService_GetBudgets_Call struct {
+	*mock.Call
+}
+
+func (_e *LedgerService_Expecter) GetBudgets(ctx interface{}, input interface{}) *LedgerService_GetBudgets_Call {
+	return &LedgerService_GetBudgets_Call{Call: _e.mock.On("GetBudgets", ctx, input)}
+}
+
+func (_c *LedgerService_GetBudgets_Call) Return(_a0 []domain.Budget, _a1 error) *LedgerService_GetBudgets_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
 // NewLedgerService creates a new instance of LedgerService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewLedgerService(t interface {

@@ -15,8 +15,10 @@ import (
 )
 
 const (
-	testUserID   = "11111111-1111-1111-1111-111111111111"
-	testCategory = "food"
+	testUserID         = "11111111-1111-1111-1111-111111111111"
+	testEmptyUserID    = "11111111-1111-1111-1111-111111111112"
+	testCategory       = "food"
+	testSecondCategory = "transport"
 )
 
 func TestBudgetRepository(t *testing.T) {
@@ -38,6 +40,13 @@ func TestBudgetRepository(t *testing.T) {
 		testUserID,
 		testCategory,
 	)
+	testhelper.CleanupBudget(
+		t,
+		ctx,
+		client,
+		testUserID,
+		testSecondCategory,
+	)
 
 	t.Cleanup(func() {
 		testhelper.CleanupBudget(
@@ -46,6 +55,13 @@ func TestBudgetRepository(t *testing.T) {
 			client,
 			testUserID,
 			testCategory,
+		)
+		testhelper.CleanupBudget(
+			t,
+			context.Background(),
+			client,
+			testUserID,
+			testSecondCategory,
 		)
 	})
 
@@ -115,5 +131,30 @@ func TestBudgetRepository(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Equal(t, updatedBudget, savedBudget)
+	})
+
+	t.Run("list budgets by user ordered by category", func(t *testing.T) {
+		_, upsertErr := repository.Upsert(
+			ctx,
+			domain.Budget{
+				UserID:   testUserID,
+				Category: testSecondCategory,
+				Limit:    25000,
+			},
+		)
+		require.NoError(t, upsertErr)
+
+		budgets, listErr := repository.ListByUser(ctx, testUserID)
+		require.NoError(t, listErr)
+		require.Len(t, budgets, 2)
+		require.Equal(t, testCategory, budgets[0].Category)
+		require.Equal(t, testSecondCategory, budgets[1].Category)
+	})
+
+	t.Run("list returns empty slice when budgets not found", func(t *testing.T) {
+		budgets, listErr := repository.ListByUser(ctx, testEmptyUserID)
+		require.NoError(t, listErr)
+		require.Empty(t, budgets)
+		require.NotNil(t, budgets)
 	})
 }

@@ -45,4 +45,9 @@ type BudgetRepository interface {
 		ctx context.Context,
 		budget domain.Budget,
 	) (domain.Budget, error)
+
+	ListByUser(
+		ctx context.Context,
+		userID string,
+	) ([]domain.Budget, error)
 }

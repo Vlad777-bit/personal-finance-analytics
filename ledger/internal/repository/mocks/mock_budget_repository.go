@@ -83,6 +83,47 @@ func (_c *BudgetRepository_GetByCategory_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
+// ListByUser provides a mock function with given fields: ctx, userID
+func (_m *BudgetRepository) ListByUser(ctx context.Context, userID string) ([]domain.Budget, error) {
+	ret := _m.Called(ctx, userID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListByUser")
+	}
+
+	var r0 []domain.Budget
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]domain.Budget, error)); ok {
+		return rf(ctx, userID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []domain.Budget); ok {
+		r0 = rf(ctx, userID)
+	} else if ret.Get(0) != nil {
+		r0 = ret.Get(0).([]domain.Budget)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, userID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+type BudgetRepository_ListByUser_Call struct {
+	*mock.Call
+}
+
+func (_e *BudgetRepository_Expecter) ListByUser(ctx interface{}, userID interface{}) *BudgetRepository_ListByUser_Call {
+	return &BudgetRepository_ListByUser_Call{Call: _e.mock.On("ListByUser", ctx, userID)}
+}
+
+func (_c *BudgetRepository_ListByUser_Call) Return(_a0 []domain.Budget, _a1 error) *BudgetRepository_ListByUser_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
 // Upsert provides a mock function with given fields: ctx, budget
 func (_m *BudgetRepository) Upsert(ctx context.Context, budget domain.Budget) (domain.Budget, error) {
 	ret := _m.Called(ctx, budget)
