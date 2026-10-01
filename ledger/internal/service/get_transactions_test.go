@@ -94,9 +94,14 @@ func TestService_GetTransactions(t *testing.T) {
 
 			transactionRepository := mocks.NewTransactionRepository(t)
 			budgetRepository := mocks.NewBudgetRepository(t)
+			reportRepository := mocks.NewReportRepository(t)
 			tt.prepare(transactionRepository)
 
-			ledgerService := service.New(transactionRepository, budgetRepository)
+			ledgerService := service.New(
+				transactionRepository,
+				budgetRepository,
+				reportRepository,
+			)
 			got, err := ledgerService.GetTransactions(t.Context(), tt.input)
 
 			require.ErrorIs(t, err, tt.wantErr)

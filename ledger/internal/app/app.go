@@ -10,6 +10,7 @@ import (
 
 	dbpgx "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/database/pgx"
 	budgetrepository "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository/database/budget"
+	reportrepository "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository/database/report"
 	transactionrepository "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/repository/database/transaction"
 	"github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/service"
 	grpctransport "github.com/Vlad777-bit/personal-finance-analytics/ledger/internal/transport/grpc"
@@ -40,9 +41,14 @@ func New(
 		databaseClient,
 	)
 
+	reportRepository := reportrepository.New(
+		databaseClient,
+	)
+
 	ledgerService := service.New(
 		transactionRepository,
 		budgetRepository,
+		reportRepository,
 	)
 	grpcServer := grpc.NewServer()
 	ledgerv1.RegisterLedgerServiceServer(

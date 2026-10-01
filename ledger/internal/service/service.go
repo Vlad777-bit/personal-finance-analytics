@@ -30,6 +30,11 @@ type LedgerService interface {
 		ctx context.Context,
 		input GetBudgetsInput,
 	) ([]domain.Budget, error)
+
+	GetSummary(
+		ctx context.Context,
+		input GetSummaryInput,
+	) (domain.Summary, error)
 }
 
 type CreateTransactionInput struct {
@@ -57,18 +62,27 @@ type GetBudgetsInput struct {
 	UserID string
 }
 
+type GetSummaryInput struct {
+	UserID string
+	From   time.Time
+	To     time.Time
+}
+
 type service struct {
 	transactionRepository repository.TransactionRepository
 	budgetRepository      repository.BudgetRepository
+	reportRepository      repository.ReportRepository
 }
 
 func New(
 	transactionRepository repository.TransactionRepository,
 	budgetRepository repository.BudgetRepository,
+	reportRepository repository.ReportRepository,
 ) LedgerService {
 	return &service{
 		transactionRepository: transactionRepository,
 		budgetRepository:      budgetRepository,
+		reportRepository:      reportRepository,
 	}
 }
 

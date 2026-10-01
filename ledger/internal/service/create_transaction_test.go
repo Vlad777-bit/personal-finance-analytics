@@ -371,6 +371,7 @@ func TestService_CreateTransaction(t *testing.T) {
 
 			transactionRepository := mocks.NewTransactionRepository(t)
 			budgetRepository := mocks.NewBudgetRepository(t)
+			reportRepository := mocks.NewReportRepository(t)
 
 			tt.prepare(
 				transactionRepository,
@@ -380,6 +381,7 @@ func TestService_CreateTransaction(t *testing.T) {
 			ledgerService := service.New(
 				transactionRepository,
 				budgetRepository,
+				reportRepository,
 			)
 
 			_, err := ledgerService.CreateTransaction(

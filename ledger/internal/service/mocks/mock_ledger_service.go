@@ -222,6 +222,41 @@ func (_c *LedgerService_GetBudgets_Call) Return(_a0 []domain.Budget, _a1 error) 
 	return _c
 }
 
+// GetSummary provides a mock function with given fields: ctx, input
+func (_m *LedgerService) GetSummary(ctx context.Context, input service.GetSummaryInput) (domain.Summary, error) {
+	ret := _m.Called(ctx, input)
+	if len(ret) == 0 {
+		panic("no return value specified for GetSummary")
+	}
+
+	var r0 domain.Summary
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, service.GetSummaryInput) (domain.Summary, error)); ok {
+		return rf(ctx, input)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, service.GetSummaryInput) domain.Summary); ok {
+		r0 = rf(ctx, input)
+	} else {
+		r0 = ret.Get(0).(domain.Summary)
+	}
+	r1 = ret.Error(1)
+
+	return r0, r1
+}
+
+type LedgerService_GetSummary_Call struct {
+	*mock.Call
+}
+
+func (_e *LedgerService_Expecter) GetSummary(ctx interface{}, input interface{}) *LedgerService_GetSummary_Call {
+	return &LedgerService_GetSummary_Call{Call: _e.mock.On("GetSummary", ctx, input)}
+}
+
+func (_c *LedgerService_GetSummary_Call) Return(_a0 domain.Summary, _a1 error) *LedgerService_GetSummary_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
 // NewLedgerService creates a new instance of LedgerService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewLedgerService(t interface {

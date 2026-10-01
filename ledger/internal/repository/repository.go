@@ -51,3 +51,12 @@ type BudgetRepository interface {
 		userID string,
 	) ([]domain.Budget, error)
 }
+
+type ReportRepository interface {
+	GetSummaryData(
+		ctx context.Context,
+		userID string,
+		from time.Time,
+		to time.Time,
+	) ([]domain.CategoryReportData, error)
+}
