@@ -20,6 +20,17 @@ type fakeLedgerClient struct {
 		context.Context,
 		ledgerclient.CreateTransactionInput,
 	) (ledgerclient.Transaction, error)
+	getTransactions func(
+		context.Context,
+		ledgerclient.GetTransactionsInput,
+	) ([]ledgerclient.Transaction, error)
+}
+
+func (f *fakeLedgerClient) GetTransactions(
+	ctx context.Context,
+	input ledgerclient.GetTransactionsInput,
+) ([]ledgerclient.Transaction, error) {
+	return f.getTransactions(ctx, input)
 }
 
 func (f *fakeLedgerClient) CreateTransaction(
@@ -141,5 +152,10 @@ func clientMustNotBeCalled(t *testing.T) *fakeLedgerClient {
 		ledgerclient.CreateTransactionInput,
 	) (ledgerclient.Transaction, error) {
 		return ledgerclient.Transaction{}, errors.New("unexpected CreateTransaction call")
+	}, getTransactions: func(
+		context.Context,
+		ledgerclient.GetTransactionsInput,
+	) ([]ledgerclient.Transaction, error) {
+		return nil, errors.New("unexpected GetTransactions call")
 	}}
 }

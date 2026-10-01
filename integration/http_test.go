@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -94,6 +95,7 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		},
 		http.StatusCreated,
 	)
+	assertTransactionList(t, httpClient, baseURL)
 	assertStatus(
 		t,
 		httpClient,
@@ -113,6 +115,56 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		[]byte("{"),
 		http.StatusBadRequest,
 	)
+}
+
+func assertTransactionList(t *testing.T, client *http.Client, baseURL string) {
+	t.Helper()
+
+	query := url.Values{
+		"user_id":  {testUserID},
+		"category": {testCategory},
+		"from":     {"2026-09-01T00:00:00Z"},
+		"to":       {"2026-10-01T00:00:00Z"},
+	}
+	request, err := http.NewRequestWithContext(
+		context.Background(),
+		http.MethodGet,
+		baseURL+"/transactions?"+query.Encode(),
+		http.NoBody,
+	)
+	if err != nil {
+		t.Fatalf("create transaction list request: %v", err)
+	}
+
+	response, err := client.Do(request)
+	if err != nil {
+		t.Fatalf("get transactions: %v", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, response.StatusCode)
+	}
+
+	var transactions []struct {
+		UserID      string `json:"user_id"`
+		Amount      int64  `json:"amount"`
+		Category    string `json:"category"`
+		Description string `json:"description"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&transactions); err != nil {
+		t.Fatalf("decode transaction list response: %v", err)
+	}
+	if len(transactions) != 1 {
+		t.Fatalf("expected one transaction, got %d", len(transactions))
+	}
+	transaction := transactions[0]
+	if transaction.UserID != testUserID ||
+		transaction.Amount != 2000 ||
+		transaction.Category != testCategory ||
+		transaction.Description != "end-to-end" {
+		t.Fatalf("unexpected transaction: %+v", transaction)
+	}
 }
 
 func buildBinary(t *testing.T, directory, output, packagePath string) {

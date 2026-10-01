@@ -32,11 +32,15 @@ func New(
 	if err != nil {
 		return nil, fmt.Errorf("create Ledger client: %w", err)
 	}
+
 	budgetHandler := budgettransport.NewHandler(ledgerClient)
 	transactionHandler := transactiontransport.NewHandler(ledgerClient)
+
 	router := httptransport.NewRouter()
+
 	router.HandleFunc("PUT /budgets/{category}", budgetHandler.Upsert)
 	router.HandleFunc("POST /transactions", transactionHandler.Create)
+	router.HandleFunc("GET /transactions", transactionHandler.GetTransactions)
 
 	return &App{
 		server: &http.Server{
