@@ -275,6 +275,47 @@ go test ./...
 go test -race ./...
 ```
 
+## Полный demo-сценарий
+
+```bash
+# 1. Запуск инфраструктуры и сервисов
+cp .env.example .env
+docker compose up -d --build
+task migration:up
+task migration:auth:up
+
+# 2. Регистрация и login
+curl -X POST http://localhost:8080/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"demo@example.com","password":"secure-password"}'
+
+LOGIN_RESPONSE=$(curl --silent -X POST http://localhost:8080/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"demo@example.com","password":"secure-password"}')
+export ACCESS_TOKEN=$(printf '%s' "$LOGIN_RESPONSE" | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
+
+# 3. Бюджет и транзакция
+curl -X PUT http://localhost:8080/budgets/food \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"limit_amount":3000}'
+
+curl -X POST http://localhost:8080/transactions \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"amount":1500,"category":"food","description":"lunch","occurred_at":"2026-10-01T12:00:00Z"}'
+
+# 4. Отчёт и CSV
+curl "http://localhost:8080/reports/summary?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z" \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+
+curl "http://localhost:8080/transactions/export?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -o exported-transactions.csv
+```
+
+Для shell-скриптов, где email уже существует, пропустите регистрацию и выполните только login.
+
 ## Google Sheets
 
 Apps Script находится в [integrations/google-sheets/Code.gs](integrations/google-sheets/Code.gs).
