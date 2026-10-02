@@ -8,6 +8,8 @@ import (
 )
 
 func TestLoad(t *testing.T) {
+	const testJWTSecret = "0123456789abcdef0123456789abcdef"
+
 	tests := []struct {
 		name        string
 		httpAddress string
@@ -17,6 +19,8 @@ func TestLoad(t *testing.T) {
 		authHost    string
 		authPort    string
 		authTimeout string
+		jwtIssuer   string
+		missingJWT  bool
 		shutdown    string
 		want        Config
 		wantError   bool
@@ -31,6 +35,8 @@ func TestLoad(t *testing.T) {
 				AuthGRPCHost:          "localhost",
 				AuthGRPCPort:          "9091",
 				AuthGRPCDialTimeout:   5 * time.Second,
+				JWTSecret:             testJWTSecret,
+				JWTIssuer:             "personal-finance-analytics/auth",
 				ShutdownTimeout:       10 * time.Second,
 			},
 		},
@@ -43,6 +49,7 @@ func TestLoad(t *testing.T) {
 			authHost:    "auth",
 			authPort:    "19091",
 			authTimeout: "4s",
+			jwtIssuer:   "custom-auth",
 			shutdown:    "3s",
 			want: Config{
 				GatewayHTTPAddr:       ":8081",
@@ -52,6 +59,8 @@ func TestLoad(t *testing.T) {
 				AuthGRPCHost:          "auth",
 				AuthGRPCPort:          "19091",
 				AuthGRPCDialTimeout:   4 * time.Second,
+				JWTSecret:             testJWTSecret,
+				JWTIssuer:             "custom-auth",
 				ShutdownTimeout:       3 * time.Second,
 			},
 		},
@@ -65,6 +74,7 @@ func TestLoad(t *testing.T) {
 		{name: "zero auth timeout", authTimeout: "0s", wantError: true},
 		{name: "invalid shutdown timeout", shutdown: "later", wantError: true},
 		{name: "zero shutdown timeout", shutdown: "0s", wantError: true},
+		{name: "missing JWT secret", missingJWT: true, wantError: true},
 	}
 
 	for _, test := range tests {
@@ -77,6 +87,12 @@ func TestLoad(t *testing.T) {
 			t.Setenv("AUTH_GRPC_PORT", test.authPort)
 			t.Setenv("AUTH_GRPC_DIAL_TIMEOUT", test.authTimeout)
 			t.Setenv("GATEWAY_SHUTDOWN_TIMEOUT", test.shutdown)
+			jwtSecret := testJWTSecret
+			if test.missingJWT {
+				jwtSecret = ""
+			}
+			t.Setenv("AUTH_JWT_SECRET", jwtSecret)
+			t.Setenv("AUTH_JWT_ISSUER", test.jwtIssuer)
 
 			got, err := Load()
 			if test.wantError {

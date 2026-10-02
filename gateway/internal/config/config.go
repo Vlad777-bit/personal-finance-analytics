@@ -20,6 +20,8 @@ const (
 	defaultAuthGRPCPort      = "9091"
 	defaultAuthDialTimeout   = 5 * time.Second
 	defaultShutdownTimeout   = 10 * time.Second
+	defaultJWTIssuer         = "personal-finance-analytics/auth"
+	minimumJWTSecretBytes    = 32
 )
 
 var dotEnvFiles = []string{".env", "../.env"}
@@ -32,6 +34,8 @@ type Config struct {
 	AuthGRPCHost          string
 	AuthGRPCPort          string
 	AuthGRPCDialTimeout   time.Duration
+	JWTSecret             string
+	JWTIssuer             string
 	ShutdownTimeout       time.Duration
 }
 
@@ -120,6 +124,14 @@ func Load() (Config, error) {
 		shutdownTimeout = parsedTimeout
 	}
 
+	jwtSecret := os.Getenv("AUTH_JWT_SECRET")
+	if len(jwtSecret) < minimumJWTSecretBytes {
+		return Config{}, fmt.Errorf(
+			"AUTH_JWT_SECRET must be at least %d bytes",
+			minimumJWTSecretBytes,
+		)
+	}
+
 	return Config{
 		GatewayHTTPAddr:       envOrDefault("GATEWAY_HTTP_ADDR", defaultHTTPAddress),
 		LedgerGRPCHost:        envOrDefault("LEDGER_GRPC_HOST", defaultLedgerGRPCHost),
@@ -128,6 +140,8 @@ func Load() (Config, error) {
 		AuthGRPCHost:          envOrDefault("AUTH_GRPC_HOST", defaultAuthGRPCHost),
 		AuthGRPCPort:          authGRPCPort,
 		AuthGRPCDialTimeout:   authDialTimeout,
+		JWTSecret:             jwtSecret,
+		JWTIssuer:             envOrDefault("AUTH_JWT_ISSUER", defaultJWTIssuer),
 		ShutdownTimeout:       shutdownTimeout,
 	}, nil
 }

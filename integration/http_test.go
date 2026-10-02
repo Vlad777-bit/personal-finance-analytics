@@ -32,6 +32,18 @@ type runningProcess struct {
 	done    chan error
 }
 
+type bearerTransport struct {
+	token string
+	base  http.RoundTripper
+}
+
+func (t bearerTransport) RoundTrip(request *http.Request) (*http.Response, error) {
+	request = request.Clone(request.Context())
+	request.Header.Set("Authorization", "Bearer "+t.token)
+
+	return t.base.RoundTrip(request)
+}
+
 func TestGatewayLedgerHTTP(t *testing.T) {
 	databaseURL := requireEnv(t, "LEDGER_DATABASE_URL")
 	repositoryRoot := filepath.Clean("..")
@@ -78,6 +90,7 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		"LEDGER_GRPC_PORT="+ledgerPort,
 		"AUTH_GRPC_HOST=127.0.0.1",
 		"AUTH_GRPC_PORT="+authPort,
+		"AUTH_JWT_SECRET=0123456789abcdef0123456789abcdef",
 	)
 	t.Cleanup(func() { stopProcess(t, gatewayProcess) })
 
@@ -110,7 +123,7 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		map[string]any{"email": testEmail, "password": "secure-password"},
 		http.StatusConflict,
 	)
-	assertLogin(t, httpClient, baseURL)
+	accessToken := assertLogin(t, httpClient, baseURL)
 	assertStatus(
 		t,
 		httpClient,
@@ -122,15 +135,30 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 	assertStatus(
 		t,
 		httpClient,
+		http.MethodGet,
+		baseURL+"/budgets?user_id="+url.QueryEscape(testUserID),
+		nil,
+		http.StatusUnauthorized,
+	)
+	authenticatedClient := &http.Client{
+		Timeout: 5 * time.Second,
+		Transport: bearerTransport{
+			token: accessToken,
+			base:  http.DefaultTransport,
+		},
+	}
+	assertStatus(
+		t,
+		authenticatedClient,
 		http.MethodPut,
 		baseURL+"/budgets/"+testCategory,
 		map[string]any{"user_id": testUserID, "limit_amount": 3000},
 		http.StatusOK,
 	)
-	assertBudgetList(t, httpClient, baseURL)
+	assertBudgetList(t, authenticatedClient, baseURL)
 	assertStatus(
 		t,
-		httpClient,
+		authenticatedClient,
 		http.MethodPost,
 		baseURL+"/transactions",
 		map[string]any{
@@ -139,11 +167,11 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		},
 		http.StatusCreated,
 	)
-	assertTransactionList(t, httpClient, baseURL)
-	assertSummary(t, httpClient, baseURL)
+	assertTransactionList(t, authenticatedClient, baseURL)
+	assertSummary(t, authenticatedClient, baseURL)
 	assertStatus(
 		t,
-		httpClient,
+		authenticatedClient,
 		http.MethodPost,
 		baseURL+"/transactions",
 		map[string]any{
@@ -154,7 +182,7 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 	)
 	assertRawStatus(
 		t,
-		httpClient,
+		authenticatedClient,
 		http.MethodPost,
 		baseURL+"/transactions",
 		[]byte("{"),
@@ -162,7 +190,7 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 	)
 }
 
-func assertLogin(t *testing.T, client *http.Client, baseURL string) {
+func assertLogin(t *testing.T, client *http.Client, baseURL string) string {
 	t.Helper()
 
 	var body bytes.Buffer
@@ -204,6 +232,8 @@ func assertLogin(t *testing.T, client *http.Client, baseURL string) {
 		result.AccessToken == "" || !result.ExpiresAt.After(time.Now()) {
 		t.Fatalf("unexpected login response: %+v", result)
 	}
+
+	return result.AccessToken
 }
 
 func assertSummary(t *testing.T, client *http.Client, baseURL string) {

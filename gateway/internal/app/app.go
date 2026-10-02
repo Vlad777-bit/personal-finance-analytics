@@ -9,9 +9,11 @@ import (
 
 	authclient "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/client/auth"
 	ledgerclient "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/client/ledger"
+	tokenjwt "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/token/jwt"
 	httptransport "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http"
 	authtransport "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http/auth"
 	budgettransport "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http/budget"
+	"github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http/middleware"
 	reporttransport "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http/report"
 	transactiontransport "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http/transaction"
 )
@@ -29,7 +31,14 @@ func New(
 	ledgerDialTimeout time.Duration,
 	authAddress string,
 	authDialTimeout time.Duration,
+	jwtSecret string,
+	jwtIssuer string,
 ) (*App, error) {
+	tokenVerifier, err := tokenjwt.New(jwtSecret, jwtIssuer)
+	if err != nil {
+		return nil, fmt.Errorf("create JWT verifier: %w", err)
+	}
+
 	ledgerClient, err := ledgerclient.New(
 		ctx,
 		ledgerAddress,
@@ -56,14 +65,15 @@ func New(
 	reportHandler := reporttransport.NewHandler(ledgerClient)
 
 	router := httptransport.NewRouter()
+	authenticate := middleware.Authenticate(tokenVerifier)
 
 	router.HandleFunc("POST /auth/register", authHandler.Register)
 	router.HandleFunc("POST /auth/login", authHandler.Login)
-	router.HandleFunc("PUT /budgets/{category}", budgetHandler.Upsert)
-	router.HandleFunc("GET /budgets", budgetHandler.GetBudgets)
-	router.HandleFunc("POST /transactions", transactionHandler.Create)
-	router.HandleFunc("GET /transactions", transactionHandler.GetTransactions)
-	router.HandleFunc("GET /reports/summary", reportHandler.GetSummary)
+	router.Handle("PUT /budgets/{category}", authenticate(http.HandlerFunc(budgetHandler.Upsert)))
+	router.Handle("GET /budgets", authenticate(http.HandlerFunc(budgetHandler.GetBudgets)))
+	router.Handle("POST /transactions", authenticate(http.HandlerFunc(transactionHandler.Create)))
+	router.Handle("GET /transactions", authenticate(http.HandlerFunc(transactionHandler.GetTransactions)))
+	router.Handle("GET /reports/summary", authenticate(http.HandlerFunc(reportHandler.GetSummary)))
 
 	return &App{
 		server: &http.Server{
