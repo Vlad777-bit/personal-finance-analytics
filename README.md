@@ -316,6 +316,156 @@ curl "http://localhost:8080/transactions/export?from=2026-10-01T00:00:00Z&to=202
 
 Для shell-скриптов, где email уже существует, пропустите регистрацию и выполните только login.
 
+## Пошаговая проверка сервисов
+
+### 1. Подготовить окружение
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+# или: podman compose up -d --build
+```
+
+Проверьте, что все контейнеры запущены:
+
+```bash
+docker compose ps
+```
+
+PostgreSQL и Redis должны иметь статус `healthy`, Auth и Ledger должны быть запущены, Gateway должен слушать порт `8080`.
+
+### 2. Применить миграции
+
+```bash
+task migration:up
+task migration:auth:up
+task migration:status
+task migration:auth:status
+```
+
+В статусе должны присутствовать две Ledger migration и одна Auth migration.
+
+### 3. Проверить Gateway и OpenAPI
+
+```bash
+curl --fail http://localhost:8080/ping
+curl --fail http://localhost:8080/openapi.yaml | head
+```
+
+Ожидается `{"status":"ok"}` и документ, начинающийся с `openapi: 3.0.3`.
+
+### 4. Проверить Auth
+
+```bash
+curl -X POST http://localhost:8080/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"check@example.com","password":"secure-password"}'
+
+curl -X POST http://localhost:8080/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"check@example.com","password":"secure-password"}'
+```
+
+Сохраните `access_token` из ответа login:
+
+```bash
+export ACCESS_TOKEN='<access_token>'
+```
+
+Повторная регистрация того же email должна вернуть `409`, а login с неверным паролем — `401`.
+
+### 5. Проверить Ledger ownership и budgets
+
+```bash
+curl -X PUT http://localhost:8080/budgets/food \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"limit_amount":3000}'
+
+curl --fail http://localhost:8080/budgets \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+```
+
+В JSON-запросе нельзя передавать `user_id`: identity берётся из JWT.
+
+### 6. Проверить transactions и budget invariant
+
+```bash
+curl -X POST http://localhost:8080/transactions \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"amount":1500,"category":"food","description":"check","occurred_at":"2026-10-01T12:00:00Z"}'
+
+curl 'http://localhost:8080/transactions?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z' \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+```
+
+Транзакция, превышающая остаток бюджета, должна завершиться `409 Conflict`.
+
+### 7. Проверить reports и Redis cache
+
+```bash
+curl 'http://localhost:8080/reports/summary?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z' \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+
+curl 'http://localhost:8080/reports/summary?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z' \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+```
+
+В логах Ledger первый запрос должен показать `summary cache miss`, а повторный — `summary cache hit`.
+
+### 8. Проверить CSV import/export
+
+Создайте файл:
+
+```bash
+cat > transactions.csv <<'CSV'
+amount,category,description,occurred_at
+500,food,coffee,2026-10-02T10:00:00Z
+CSV
+```
+
+Импортируйте его:
+
+```bash
+curl -X POST http://localhost:8080/transactions/import \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H 'Content-Type: text/csv' \
+  --data-binary @transactions.csv
+```
+
+Ожидаемый ответ содержит `imported_count: 1`.
+
+Экспортируйте период:
+
+```bash
+curl 'http://localhost:8080/transactions/export?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z' \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -o exported-transactions.csv
+```
+
+В exported CSV должны присутствовать исходные заголовки и импортированная транзакция.
+
+### 9. Запустить автоматические проверки
+
+```bash
+task test
+task test:race
+task test:integration
+task lint
+```
+
+`task test:integration` проверяет PostgreSQL, Redis, Auth gRPC, Ledger gRPC и полный Gateway HTTP сценарий.
+
+### 10. Проверить Google Sheets
+
+1. Откройте Google Sheet → `Extensions` → `Apps Script`.
+2. Скопируйте `integrations/google-sheets/Code.gs`.
+3. Выполните `setGatewayConfig` с доступным из Google Apps Script Gateway URL и JWT.
+4. Создайте строку с колонками Date, Amount, Category, Description.
+5. Запустите `createTransactionFromActiveRow`.
+6. Запустите `writeCurrentMonthSummary` и проверьте колонки H:I.
+
 ## Google Sheets
 
 Apps Script находится в [integrations/google-sheets/Code.gs](integrations/google-sheets/Code.gs).
