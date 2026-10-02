@@ -36,6 +36,8 @@ func run() int {
 		cfg.GatewayHTTPAddr,
 		cfg.LedgerGRPCAddress(),
 		cfg.LedgerGRPCDialTimeout,
+		cfg.AuthGRPCAddress(),
+		cfg.AuthGRPCDialTimeout,
 	)
 	if err != nil {
 		logger.Error("initialize Gateway application", "error", err)

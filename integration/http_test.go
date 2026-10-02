@@ -24,6 +24,7 @@ import (
 const (
 	testUserID   = "66666666-6666-6666-6666-666666666666"
 	testCategory = "http-e2e"
+	testEmail    = "http-e2e@example.com"
 )
 
 type runningProcess struct {
@@ -37,11 +38,14 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 	temporaryDirectory := t.TempDir()
 
 	ledgerBinary := filepath.Join(temporaryDirectory, "ledger")
+	authBinary := filepath.Join(temporaryDirectory, "auth")
 	gatewayBinary := filepath.Join(temporaryDirectory, "gateway")
 	buildBinary(t, repositoryRoot, ledgerBinary, "./ledger/cmd/ledger")
+	buildBinary(t, repositoryRoot, authBinary, "./auth/cmd/auth")
 	buildBinary(t, repositoryRoot, gatewayBinary, "./gateway/cmd/gateway")
 
 	ledgerPort := freePort(t)
+	authPort := freePort(t)
 	gatewayPort := freePort(t)
 	ledgerProcess := startProcess(
 		t,
@@ -53,6 +57,18 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 	t.Cleanup(func() { stopProcess(t, ledgerProcess) })
 	waitForTCP(t, net.JoinHostPort("127.0.0.1", ledgerPort), ledgerProcess)
 
+	authProcess := startProcess(
+		t,
+		repositoryRoot,
+		authBinary,
+		"AUTH_GRPC_PORT="+authPort,
+		"AUTH_DATABASE_URL="+databaseURL,
+		"AUTH_BCRYPT_COST=4",
+		"AUTH_JWT_SECRET=0123456789abcdef0123456789abcdef",
+	)
+	t.Cleanup(func() { stopProcess(t, authProcess) })
+	waitForTCP(t, net.JoinHostPort("127.0.0.1", authPort), authProcess)
+
 	gatewayProcess := startProcess(
 		t,
 		repositoryRoot,
@@ -60,6 +76,8 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		"GATEWAY_HTTP_ADDR="+net.JoinHostPort("127.0.0.1", gatewayPort),
 		"LEDGER_GRPC_HOST=127.0.0.1",
 		"LEDGER_GRPC_PORT="+ledgerPort,
+		"AUTH_GRPC_HOST=127.0.0.1",
+		"AUTH_GRPC_PORT="+authPort,
 	)
 	t.Cleanup(func() { stopProcess(t, gatewayProcess) })
 
@@ -76,6 +94,31 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 	t.Cleanup(func() { cleanupData(t, database) })
 
 	assertStatus(t, httpClient, http.MethodGet, baseURL+"/ping", nil, http.StatusOK)
+	assertStatus(
+		t,
+		httpClient,
+		http.MethodPost,
+		baseURL+"/auth/register",
+		map[string]any{"email": testEmail, "password": "secure-password"},
+		http.StatusCreated,
+	)
+	assertStatus(
+		t,
+		httpClient,
+		http.MethodPost,
+		baseURL+"/auth/register",
+		map[string]any{"email": testEmail, "password": "secure-password"},
+		http.StatusConflict,
+	)
+	assertLogin(t, httpClient, baseURL)
+	assertStatus(
+		t,
+		httpClient,
+		http.MethodPost,
+		baseURL+"/auth/login",
+		map[string]any{"email": testEmail, "password": "wrong-password"},
+		http.StatusUnauthorized,
+	)
 	assertStatus(
 		t,
 		httpClient,
@@ -117,6 +160,50 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		[]byte("{"),
 		http.StatusBadRequest,
 	)
+}
+
+func assertLogin(t *testing.T, client *http.Client, baseURL string) {
+	t.Helper()
+
+	var body bytes.Buffer
+	if err := json.NewEncoder(&body).Encode(map[string]any{
+		"email": testEmail, "password": "secure-password",
+	}); err != nil {
+		t.Fatalf("encode login request: %v", err)
+	}
+	request, err := http.NewRequestWithContext(
+		context.Background(),
+		http.MethodPost,
+		baseURL+"/auth/login",
+		&body,
+	)
+	if err != nil {
+		t.Fatalf("create login request: %v", err)
+	}
+	request.Header.Set("Content-Type", "application/json")
+
+	response, err := client.Do(request)
+	if err != nil {
+		t.Fatalf("login: %v", err)
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("expected login status %d, got %d", http.StatusOK, response.StatusCode)
+	}
+
+	var result struct {
+		UserID      string    `json:"user_id"`
+		Email       string    `json:"email"`
+		AccessToken string    `json:"access_token"`
+		ExpiresAt   time.Time `json:"expires_at"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+		t.Fatalf("decode login response: %v", err)
+	}
+	if result.UserID == "" || result.Email != testEmail ||
+		result.AccessToken == "" || !result.ExpiresAt.After(time.Now()) {
+		t.Fatalf("unexpected login response: %+v", result)
+	}
 }
 
 func assertSummary(t *testing.T, client *http.Client, baseURL string) {
@@ -404,6 +491,9 @@ func cleanupData(t *testing.T, database *pgxpool.Pool) {
 		testCategory,
 	); err != nil {
 		t.Fatalf("cleanup budget: %v", err)
+	}
+	if _, err := database.Exec(ctx, "DELETE FROM users WHERE email = $1", testEmail); err != nil {
+		t.Fatalf("cleanup user: %v", err)
 	}
 }
 
