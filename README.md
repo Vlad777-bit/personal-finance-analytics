@@ -277,4 +277,32 @@ go test -race ./...
 
 ## Google Sheets
 
-Google Apps Script integration ещё не добавлена. Следующий этап проекта — скрипт для создания транзакции и получения отчёта через Gateway с JWT, а также пример структуры Google Sheet.
+Apps Script находится в [integrations/google-sheets/Code.gs](integrations/google-sheets/Code.gs).
+
+Структура листа для создания транзакции из активной строки:
+
+| A: Date | B: Amount | C: Category | D: Description | F: Result |
+|---|---:|---|---|---|
+| `2026-10-01T12:00:00Z` | `1500` | `food` | `lunch` | transaction ID |
+
+Настройка:
+
+1. Откройте Google Sheet и выберите `Extensions → Apps Script`.
+2. Скопируйте содержимое `integrations/google-sheets/Code.gs`.
+3. Получите JWT через `/auth/login`.
+4. Один раз выполните в редакторе Apps Script:
+
+```javascript
+setGatewayConfig('https://your-gateway.example.com', '<jwt-access-token>');
+```
+
+Для локального Gateway используйте адрес, доступный из браузера/Apps Script. `localhost` из Apps Script указывает на инфраструктуру Google, а не на ваш компьютер.
+
+Доступные функции:
+
+- `createTransaction(amount, category, description, occurredAt)` — создаёт транзакцию;
+- `createTransactionFromActiveRow()` — берёт значения A:D активной строки;
+- `getSummary(from, to)` — получает отчёт за период;
+- `writeCurrentMonthSummary()` — записывает текущий отчёт в колонки H:I.
+
+JWT хранится в `UserProperties` и не записывается в таблицу. После истечения access token повторите login и выполните `setGatewayConfig` с новым токеном.
