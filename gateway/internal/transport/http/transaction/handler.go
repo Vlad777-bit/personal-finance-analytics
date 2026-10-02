@@ -8,6 +8,7 @@ import (
 
 	ledgerclient "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/client/ledger"
 	httptransport "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http"
+	"github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http/middleware"
 )
 
 type LedgerClient interface {
@@ -27,7 +28,6 @@ type Handler struct {
 }
 
 type createRequest struct {
-	UserID      string `json:"user_id"`
 	Amount      int64  `json:"amount"`
 	Category    string `json:"category"`
 	Description string `json:"description"`
@@ -49,6 +49,13 @@ func NewHandler(client LedgerClient) *Handler {
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
+	identity, ok := middleware.IdentityFromContext(r.Context())
+	if !ok {
+		httptransport.WriteError(w, http.StatusUnauthorized, "unauthorized", "authentication is required")
+
+		return
+	}
+
 	var request createRequest
 	if err := httptransport.DecodeJSON(w, r, &request); err != nil {
 		httptransport.WriteError(w, http.StatusBadRequest, "invalid_request", err.Error())
@@ -56,15 +63,14 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if strings.TrimSpace(request.UserID) == "" ||
-		request.Amount <= 0 ||
+	if request.Amount <= 0 ||
 		strings.TrimSpace(request.Category) == "" ||
 		strings.TrimSpace(request.OccurredAt) == "" {
 		httptransport.WriteError(
 			w,
 			http.StatusBadRequest,
 			"invalid_request",
-			"user_id, positive amount, category and occurred_at are required",
+			"positive amount, category and occurred_at are required",
 		)
 
 		return
@@ -85,7 +91,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	createdTransaction, err := h.ledgerClient.CreateTransaction(
 		r.Context(),
 		ledgerclient.CreateTransactionInput{
-			UserID:      request.UserID,
+			UserID:      identity.UserID,
 			Amount:      request.Amount,
 			Category:    request.Category,
 			Description: request.Description,

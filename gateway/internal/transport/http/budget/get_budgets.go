@@ -2,28 +2,23 @@ package budget
 
 import (
 	"net/http"
-	"strings"
 
 	ledgerclient "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/client/ledger"
 	httptransport "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http"
+	"github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http/middleware"
 )
 
 func (h *Handler) GetBudgets(w http.ResponseWriter, r *http.Request) {
-	userID := strings.TrimSpace(r.URL.Query().Get("user_id"))
-	if userID == "" {
-		httptransport.WriteError(
-			w,
-			http.StatusBadRequest,
-			"invalid_request",
-			"user_id is required",
-		)
+	identity, ok := middleware.IdentityFromContext(r.Context())
+	if !ok {
+		httptransport.WriteError(w, http.StatusUnauthorized, "unauthorized", "authentication is required")
 
 		return
 	}
 
 	budgets, err := h.ledgerClient.GetBudgets(
 		r.Context(),
-		ledgerclient.GetBudgetsInput{UserID: userID},
+		ledgerclient.GetBudgetsInput{UserID: identity.UserID},
 	)
 	if err != nil {
 		httptransport.WriteLedgerError(w, err)

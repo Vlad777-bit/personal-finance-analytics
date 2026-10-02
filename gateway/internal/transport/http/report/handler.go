@@ -8,6 +8,7 @@ import (
 
 	ledgerclient "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/client/ledger"
 	httptransport "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http"
+	"github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http/middleware"
 )
 
 type LedgerClient interface {
@@ -43,16 +44,22 @@ func NewHandler(client LedgerClient) *Handler {
 }
 
 func (h *Handler) GetSummary(w http.ResponseWriter, r *http.Request) {
+	identity, ok := middleware.IdentityFromContext(r.Context())
+	if !ok {
+		httptransport.WriteError(w, http.StatusUnauthorized, "unauthorized", "authentication is required")
+
+		return
+	}
+
 	query := r.URL.Query()
-	userID := strings.TrimSpace(query.Get("user_id"))
 	fromValue := strings.TrimSpace(query.Get("from"))
 	toValue := strings.TrimSpace(query.Get("to"))
-	if userID == "" || fromValue == "" || toValue == "" {
+	if fromValue == "" || toValue == "" {
 		httptransport.WriteError(
 			w,
 			http.StatusBadRequest,
 			"invalid_request",
-			"user_id, from and to are required",
+			"from and to are required",
 		)
 
 		return
@@ -95,7 +102,7 @@ func (h *Handler) GetSummary(w http.ResponseWriter, r *http.Request) {
 
 	summary, err := h.ledgerClient.GetSummary(
 		r.Context(),
-		ledgerclient.GetSummaryInput{UserID: userID, From: from, To: to},
+		ledgerclient.GetSummaryInput{UserID: identity.UserID, From: from, To: to},
 	)
 	if err != nil {
 		httptransport.WriteLedgerError(w, err)

@@ -40,6 +40,10 @@ func IdentityFromContext(ctx context.Context) (token.Identity, bool) {
 	return identity, ok
 }
 
+func WithIdentity(ctx context.Context, identity token.Identity) context.Context {
+	return context.WithValue(ctx, identityContextKey{}, identity)
+}
+
 func bearerToken(header string) (string, bool) {
 	parts := strings.Fields(header)
 	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") || parts[1] == "" {

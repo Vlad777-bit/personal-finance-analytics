@@ -3,6 +3,7 @@ package budget_test
 import (
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -11,7 +12,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	ledgerclient "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/client/ledger"
+	"github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/token"
 	budgettransport "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http/budget"
+	"github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http/middleware"
 )
 
 type fakeLedgerClient struct {
@@ -52,7 +55,7 @@ func TestHandler_Upsert(t *testing.T) {
 	}{
 		{
 			name:     "success",
-			body:     `{"user_id":"user-1","limit_amount":50000}`,
+			body:     `{"limit_amount":50000}`,
 			category: "food",
 			client: &fakeLedgerClient{createBudget: func(
 				_ context.Context,
@@ -84,7 +87,7 @@ func TestHandler_Upsert(t *testing.T) {
 		},
 		{
 			name:       "unknown field",
-			body:       `{"user_id":"user-1","limit_amount":50000,"currency":"USD"}`,
+			body:       `{"limit_amount":50000,"currency":"USD"}`,
 			category:   "food",
 			client:     clientMustNotBeCalled(t),
 			wantStatus: http.StatusBadRequest,
@@ -92,20 +95,20 @@ func TestHandler_Upsert(t *testing.T) {
 		},
 		{
 			name:       "invalid input",
-			body:       `{"user_id":"","limit_amount":0}`,
+			body:       `{"limit_amount":0}`,
 			category:   "food",
 			client:     clientMustNotBeCalled(t),
 			wantStatus: http.StatusBadRequest,
 			wantBody: `{
 				"error":{
 					"code":"invalid_request",
-					"message":"user_id, category and positive limit_amount are required"
+					"message":"category and positive limit_amount are required"
 				}
 			}`,
 		},
 		{
 			name:     "Ledger unavailable",
-			body:     `{"user_id":"user-1","limit_amount":50000}`,
+			body:     `{"limit_amount":50000}`,
 			category: "food",
 			client: &fakeLedgerClient{createBudget: func(
 				context.Context,
@@ -125,7 +128,8 @@ func TestHandler_Upsert(t *testing.T) {
 			t.Parallel()
 
 			handler := budgettransport.NewHandler(test.client)
-			request := httptest.NewRequest(
+			request := authenticatedRequest(
+				t,
 				http.MethodPut,
 				"/budgets/"+test.category,
 				strings.NewReader(test.body),
@@ -139,6 +143,23 @@ func TestHandler_Upsert(t *testing.T) {
 			require.JSONEq(t, test.wantBody, recorder.Body.String())
 		})
 	}
+}
+
+func authenticatedRequest(
+	t *testing.T,
+	method string,
+	target string,
+	body io.Reader,
+) *http.Request {
+	t.Helper()
+
+	request := httptest.NewRequest(method, target, body)
+	ctx := middleware.WithIdentity(
+		request.Context(),
+		token.Identity{UserID: "user-1", Email: "user@example.com"},
+	)
+
+	return request.WithContext(ctx)
 }
 
 func clientMustNotBeCalled(t *testing.T) *fakeLedgerClient {

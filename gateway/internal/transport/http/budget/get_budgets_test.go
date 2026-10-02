@@ -24,7 +24,7 @@ func TestHandler_GetBudgets(t *testing.T) {
 	}{
 		{
 			name:  "success",
-			query: "?user_id=user-1",
+			query: "?user_id=other-user",
 			client: &fakeLedgerClient{getBudgets: func(
 				_ context.Context,
 				input ledgerclient.GetBudgetsInput,
@@ -41,7 +41,7 @@ func TestHandler_GetBudgets(t *testing.T) {
 		},
 		{
 			name:  "empty result",
-			query: "?user_id=user-1",
+			query: "",
 			client: &fakeLedgerClient{getBudgets: func(
 				context.Context,
 				ledgerclient.GetBudgetsInput,
@@ -52,15 +52,8 @@ func TestHandler_GetBudgets(t *testing.T) {
 			wantBody:   `[]`,
 		},
 		{
-			name:       "missing user id",
-			query:      "",
-			client:     clientMustNotBeCalled(t),
-			wantStatus: http.StatusBadRequest,
-			wantBody:   `{"error":{"code":"invalid_request","message":"user_id is required"}}`,
-		},
-		{
 			name:  "ledger unavailable",
-			query: "?user_id=user-1",
+			query: "",
 			client: &fakeLedgerClient{getBudgets: func(
 				context.Context,
 				ledgerclient.GetBudgetsInput,
@@ -77,7 +70,7 @@ func TestHandler_GetBudgets(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			request := httptest.NewRequest(http.MethodGet, "/budgets"+tt.query, nil)
+			request := authenticatedRequest(t, http.MethodGet, "/budgets"+tt.query, nil)
 			recorder := httptest.NewRecorder()
 
 			budgettransport.NewHandler(tt.client).GetBudgets(recorder, request)

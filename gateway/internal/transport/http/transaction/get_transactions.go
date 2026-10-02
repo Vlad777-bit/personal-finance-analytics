@@ -7,19 +7,26 @@ import (
 
 	ledgerclient "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/client/ledger"
 	httptransport "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http"
+	"github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http/middleware"
 )
 
 func (h *Handler) GetTransactions(w http.ResponseWriter, r *http.Request) {
+	identity, ok := middleware.IdentityFromContext(r.Context())
+	if !ok {
+		httptransport.WriteError(w, http.StatusUnauthorized, "unauthorized", "authentication is required")
+
+		return
+	}
+
 	query := r.URL.Query()
-	userID := strings.TrimSpace(query.Get("user_id"))
 	fromValue := strings.TrimSpace(query.Get("from"))
 	toValue := strings.TrimSpace(query.Get("to"))
-	if userID == "" || fromValue == "" || toValue == "" {
+	if fromValue == "" || toValue == "" {
 		httptransport.WriteError(
 			w,
 			http.StatusBadRequest,
 			"invalid_request",
-			"user_id, from and to are required",
+			"from and to are required",
 		)
 
 		return
@@ -63,7 +70,7 @@ func (h *Handler) GetTransactions(w http.ResponseWriter, r *http.Request) {
 	transactions, err := h.ledgerClient.GetTransactions(
 		r.Context(),
 		ledgerclient.GetTransactionsInput{
-			UserID:   userID,
+			UserID:   identity.UserID,
 			Category: strings.TrimSpace(query.Get("category")),
 			From:     from,
 			To:       to,

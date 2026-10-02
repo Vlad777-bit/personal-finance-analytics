@@ -7,6 +7,7 @@ import (
 
 	ledgerclient "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/client/ledger"
 	httptransport "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http"
+	"github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http/middleware"
 )
 
 type LedgerClient interface {
@@ -26,8 +27,7 @@ type Handler struct {
 }
 
 type upsertRequest struct {
-	UserID string `json:"user_id"`
-	Limit  int64  `json:"limit_amount"`
+	Limit int64 `json:"limit_amount"`
 }
 
 type budgetResponse struct {
@@ -42,6 +42,13 @@ func NewHandler(client LedgerClient) *Handler {
 }
 
 func (h *Handler) Upsert(w http.ResponseWriter, r *http.Request) {
+	identity, ok := middleware.IdentityFromContext(r.Context())
+	if !ok {
+		httptransport.WriteError(w, http.StatusUnauthorized, "unauthorized", "authentication is required")
+
+		return
+	}
+
 	var request upsertRequest
 	err := httptransport.DecodeJSON(w, r, &request)
 	if err != nil {
@@ -51,12 +58,12 @@ func (h *Handler) Upsert(w http.ResponseWriter, r *http.Request) {
 	}
 
 	category := strings.TrimSpace(r.PathValue("category"))
-	if category == "" || strings.TrimSpace(request.UserID) == "" || request.Limit <= 0 {
+	if category == "" || request.Limit <= 0 {
 		httptransport.WriteError(
 			w,
 			http.StatusBadRequest,
 			"invalid_request",
-			"user_id, category and positive limit_amount are required",
+			"category and positive limit_amount are required",
 		)
 
 		return
@@ -65,7 +72,7 @@ func (h *Handler) Upsert(w http.ResponseWriter, r *http.Request) {
 	createdBudget, err := h.ledgerClient.CreateBudget(
 		r.Context(),
 		ledgerclient.CreateBudgetInput{
-			UserID:   request.UserID,
+			UserID:   identity.UserID,
 			Category: category,
 			Limit:    request.Limit,
 		},

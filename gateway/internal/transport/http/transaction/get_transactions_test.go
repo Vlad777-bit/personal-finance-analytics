@@ -29,7 +29,7 @@ func TestHandler_GetTransactions(t *testing.T) {
 	}{
 		{
 			name:  "success",
-			query: "?user_id=user-1&category=food&from=2026-09-01T00:00:00Z&to=2026-10-01T00:00:00Z",
+			query: "?user_id=other-user&category=food&from=2026-09-01T00:00:00Z&to=2026-10-01T00:00:00Z",
 			client: &fakeLedgerClient{getTransactions: func(
 				_ context.Context,
 				input ledgerclient.GetTransactionsInput,
@@ -54,7 +54,7 @@ func TestHandler_GetTransactions(t *testing.T) {
 		},
 		{
 			name:  "empty result",
-			query: "?user_id=user-1&from=2026-09-01T00:00:00Z&to=2026-10-01T00:00:00Z",
+			query: "?from=2026-09-01T00:00:00Z&to=2026-10-01T00:00:00Z",
 			client: &fakeLedgerClient{getTransactions: func(
 				context.Context,
 				ledgerclient.GetTransactionsInput,
@@ -66,35 +66,35 @@ func TestHandler_GetTransactions(t *testing.T) {
 		},
 		{
 			name:       "missing required query",
-			query:      "?user_id=user-1",
+			query:      "",
 			client:     clientMustNotBeCalled(t),
 			wantStatus: http.StatusBadRequest,
-			wantBody:   `{"error":{"code":"invalid_request","message":"user_id, from and to are required"}}`,
+			wantBody:   `{"error":{"code":"invalid_request","message":"from and to are required"}}`,
 		},
 		{
 			name:       "invalid from",
-			query:      "?user_id=user-1&from=yesterday&to=2026-10-01T00:00:00Z",
+			query:      "?from=yesterday&to=2026-10-01T00:00:00Z",
 			client:     clientMustNotBeCalled(t),
 			wantStatus: http.StatusBadRequest,
 			wantBody:   `{"error":{"code":"invalid_request","message":"from must use RFC3339 format"}}`,
 		},
 		{
 			name:       "invalid to",
-			query:      "?user_id=user-1&from=2026-09-01T00:00:00Z&to=tomorrow",
+			query:      "?from=2026-09-01T00:00:00Z&to=tomorrow",
 			client:     clientMustNotBeCalled(t),
 			wantStatus: http.StatusBadRequest,
 			wantBody:   `{"error":{"code":"invalid_request","message":"to must use RFC3339 format"}}`,
 		},
 		{
 			name:       "invalid period",
-			query:      "?user_id=user-1&from=2026-10-01T00:00:00Z&to=2026-09-01T00:00:00Z",
+			query:      "?from=2026-10-01T00:00:00Z&to=2026-09-01T00:00:00Z",
 			client:     clientMustNotBeCalled(t),
 			wantStatus: http.StatusBadRequest,
 			wantBody:   `{"error":{"code":"invalid_request","message":"from must be before to"}}`,
 		},
 		{
 			name:  "ledger unavailable",
-			query: "?user_id=user-1&from=2026-09-01T00:00:00Z&to=2026-10-01T00:00:00Z",
+			query: "?from=2026-09-01T00:00:00Z&to=2026-10-01T00:00:00Z",
 			client: &fakeLedgerClient{getTransactions: func(
 				context.Context,
 				ledgerclient.GetTransactionsInput,
@@ -111,7 +111,8 @@ func TestHandler_GetTransactions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			request := httptest.NewRequest(
+			request := authenticatedRequest(
+				t,
 				http.MethodGet,
 				"/transactions"+tt.query,
 				nil,

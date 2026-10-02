@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	ledgerclient "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/client/ledger"
+	"github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/token"
+	"github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http/middleware"
 	reporttransport "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http/report"
 )
 
@@ -42,7 +44,7 @@ func TestHandler_GetSummary(t *testing.T) {
 	}{
 		{
 			name:  "success",
-			query: "?user_id=user-1&from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z",
+			query: "?user_id=other-user&from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z",
 			client: &fakeLedgerClient{getSummary: func(
 				_ context.Context,
 				input ledgerclient.GetSummaryInput,
@@ -71,35 +73,35 @@ func TestHandler_GetSummary(t *testing.T) {
 		},
 		{
 			name:       "missing required query",
-			query:      "?user_id=user-1",
+			query:      "",
 			client:     clientMustNotBeCalled(t),
 			wantStatus: http.StatusBadRequest,
-			wantBody:   `{"error":{"code":"invalid_request","message":"user_id, from and to are required"}}`,
+			wantBody:   `{"error":{"code":"invalid_request","message":"from and to are required"}}`,
 		},
 		{
 			name:       "invalid from",
-			query:      "?user_id=user-1&from=yesterday&to=2026-11-01T00:00:00Z",
+			query:      "?from=yesterday&to=2026-11-01T00:00:00Z",
 			client:     clientMustNotBeCalled(t),
 			wantStatus: http.StatusBadRequest,
 			wantBody:   `{"error":{"code":"invalid_request","message":"from must use RFC3339 format"}}`,
 		},
 		{
 			name:       "invalid to",
-			query:      "?user_id=user-1&from=2026-10-01T00:00:00Z&to=tomorrow",
+			query:      "?from=2026-10-01T00:00:00Z&to=tomorrow",
 			client:     clientMustNotBeCalled(t),
 			wantStatus: http.StatusBadRequest,
 			wantBody:   `{"error":{"code":"invalid_request","message":"to must use RFC3339 format"}}`,
 		},
 		{
 			name:       "invalid period",
-			query:      "?user_id=user-1&from=2026-11-01T00:00:00Z&to=2026-10-01T00:00:00Z",
+			query:      "?from=2026-11-01T00:00:00Z&to=2026-10-01T00:00:00Z",
 			client:     clientMustNotBeCalled(t),
 			wantStatus: http.StatusBadRequest,
 			wantBody:   `{"error":{"code":"invalid_request","message":"from must be before to"}}`,
 		},
 		{
 			name:  "ledger unavailable",
-			query: "?user_id=user-1&from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z",
+			query: "?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z",
 			client: &fakeLedgerClient{getSummary: func(
 				context.Context,
 				ledgerclient.GetSummaryInput,
@@ -117,6 +119,10 @@ func TestHandler_GetSummary(t *testing.T) {
 			t.Parallel()
 
 			request := httptest.NewRequest(http.MethodGet, "/reports/summary"+tt.query, nil)
+			request = request.WithContext(middleware.WithIdentity(
+				request.Context(),
+				token.Identity{UserID: "user-1", Email: "user@example.com"},
+			))
 			recorder := httptest.NewRecorder()
 
 			reporttransport.NewHandler(tt.client).GetSummary(recorder, request)

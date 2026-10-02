@@ -3,6 +3,7 @@ package transaction_test
 import (
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -12,6 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	ledgerclient "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/client/ledger"
+	"github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/token"
+	"github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http/middleware"
 	transactiontransport "github.com/Vlad777-bit/personal-finance-analytics/gateway/internal/transport/http/transaction"
 )
 
@@ -55,7 +58,6 @@ func TestHandler_Create(t *testing.T) {
 		{
 			name: "success",
 			body: `{
-				"user_id":"user-1",
 				"amount":1500,
 				"category":"food",
 				"description":"lunch",
@@ -88,19 +90,19 @@ func TestHandler_Create(t *testing.T) {
 		},
 		{
 			name:       "invalid input",
-			body:       `{"user_id":"","amount":0,"category":"","occurred_at":""}`,
+			body:       `{"amount":0,"category":"","occurred_at":""}`,
 			client:     clientMustNotBeCalled(t),
 			wantStatus: http.StatusBadRequest,
 			wantBody: `{
 				"error":{
 					"code":"invalid_request",
-					"message":"user_id, positive amount, category and occurred_at are required"
+					"message":"positive amount, category and occurred_at are required"
 				}
 			}`,
 		},
 		{
 			name:       "invalid occurred_at",
-			body:       `{"user_id":"user-1","amount":100,"category":"food","occurred_at":"today"}`,
+			body:       `{"amount":100,"category":"food","occurred_at":"today"}`,
 			client:     clientMustNotBeCalled(t),
 			wantStatus: http.StatusBadRequest,
 			wantBody: `{
@@ -110,7 +112,7 @@ func TestHandler_Create(t *testing.T) {
 		{
 			name: "budget exceeded",
 			body: `{
-				"user_id":"user-1","amount":1500,"category":"food",
+				"amount":1500,"category":"food",
 				"occurred_at":"2026-09-30T12:00:00Z"
 			}`,
 			client: &fakeLedgerClient{createTransaction: func(
@@ -129,7 +131,8 @@ func TestHandler_Create(t *testing.T) {
 			t.Parallel()
 
 			handler := transactiontransport.NewHandler(test.client)
-			request := httptest.NewRequest(
+			request := authenticatedRequest(
+				t,
 				http.MethodPost,
 				"/transactions",
 				strings.NewReader(test.body),
@@ -142,6 +145,23 @@ func TestHandler_Create(t *testing.T) {
 			require.JSONEq(t, test.wantBody, recorder.Body.String())
 		})
 	}
+}
+
+func authenticatedRequest(
+	t *testing.T,
+	method string,
+	target string,
+	body io.Reader,
+) *http.Request {
+	t.Helper()
+
+	request := httptest.NewRequest(method, target, body)
+	ctx := middleware.WithIdentity(
+		request.Context(),
+		token.Identity{UserID: "user-1", Email: "user@example.com"},
+	)
+
+	return request.WithContext(ctx)
 }
 
 func clientMustNotBeCalled(t *testing.T) *fakeLedgerClient {

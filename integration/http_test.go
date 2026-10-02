@@ -22,7 +22,6 @@ import (
 )
 
 const (
-	testUserID   = "66666666-6666-6666-6666-666666666666"
 	testCategory = "http-e2e"
 	testEmail    = "http-e2e@example.com"
 )
@@ -123,7 +122,7 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		map[string]any{"email": testEmail, "password": "secure-password"},
 		http.StatusConflict,
 	)
-	accessToken := assertLogin(t, httpClient, baseURL)
+	authenticatedUserID, accessToken := assertLogin(t, httpClient, baseURL)
 	assertStatus(
 		t,
 		httpClient,
@@ -136,7 +135,7 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		t,
 		httpClient,
 		http.MethodGet,
-		baseURL+"/budgets?user_id="+url.QueryEscape(testUserID),
+		baseURL+"/budgets",
 		nil,
 		http.StatusUnauthorized,
 	)
@@ -152,30 +151,38 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		authenticatedClient,
 		http.MethodPut,
 		baseURL+"/budgets/"+testCategory,
-		map[string]any{"user_id": testUserID, "limit_amount": 3000},
+		map[string]any{"user_id": "another-user", "limit_amount": 3000},
+		http.StatusBadRequest,
+	)
+	assertStatus(
+		t,
+		authenticatedClient,
+		http.MethodPut,
+		baseURL+"/budgets/"+testCategory,
+		map[string]any{"limit_amount": 3000},
 		http.StatusOK,
 	)
-	assertBudgetList(t, authenticatedClient, baseURL)
+	assertBudgetList(t, authenticatedClient, baseURL, authenticatedUserID)
 	assertStatus(
 		t,
 		authenticatedClient,
 		http.MethodPost,
 		baseURL+"/transactions",
 		map[string]any{
-			"user_id": testUserID, "amount": 2000, "category": testCategory,
+			"amount": 2000, "category": testCategory,
 			"description": "end-to-end", "occurred_at": "2026-09-30T12:00:00Z",
 		},
 		http.StatusCreated,
 	)
-	assertTransactionList(t, authenticatedClient, baseURL)
-	assertSummary(t, authenticatedClient, baseURL)
+	assertTransactionList(t, authenticatedClient, baseURL, authenticatedUserID)
+	assertSummary(t, authenticatedClient, baseURL, authenticatedUserID)
 	assertStatus(
 		t,
 		authenticatedClient,
 		http.MethodPost,
 		baseURL+"/transactions",
 		map[string]any{
-			"user_id": testUserID, "amount": 1500, "category": testCategory,
+			"amount": 1500, "category": testCategory,
 			"occurred_at": "2026-09-30T12:00:00Z",
 		},
 		http.StatusConflict,
@@ -190,7 +197,7 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 	)
 }
 
-func assertLogin(t *testing.T, client *http.Client, baseURL string) string {
+func assertLogin(t *testing.T, client *http.Client, baseURL string) (string, string) {
 	t.Helper()
 
 	var body bytes.Buffer
@@ -233,16 +240,15 @@ func assertLogin(t *testing.T, client *http.Client, baseURL string) string {
 		t.Fatalf("unexpected login response: %+v", result)
 	}
 
-	return result.AccessToken
+	return result.UserID, result.AccessToken
 }
 
-func assertSummary(t *testing.T, client *http.Client, baseURL string) {
+func assertSummary(t *testing.T, client *http.Client, baseURL, userID string) {
 	t.Helper()
 
 	query := url.Values{
-		"user_id": {testUserID},
-		"from":    {"2026-09-01T00:00:00Z"},
-		"to":      {"2026-10-01T00:00:00Z"},
+		"from": {"2026-09-01T00:00:00Z"},
+		"to":   {"2026-10-01T00:00:00Z"},
 	}
 	request, err := http.NewRequestWithContext(
 		context.Background(),
@@ -279,7 +285,7 @@ func assertSummary(t *testing.T, client *http.Client, baseURL string) {
 	if err := json.NewDecoder(response.Body).Decode(&summary); err != nil {
 		t.Fatalf("decode summary response: %v", err)
 	}
-	if summary.UserID != testUserID || summary.TotalSpent != 2000 {
+	if summary.UserID != userID || summary.TotalSpent != 2000 {
 		t.Fatalf("unexpected summary: %+v", summary)
 	}
 	if len(summary.Categories) != 1 {
@@ -296,14 +302,13 @@ func assertSummary(t *testing.T, client *http.Client, baseURL string) {
 	}
 }
 
-func assertBudgetList(t *testing.T, client *http.Client, baseURL string) {
+func assertBudgetList(t *testing.T, client *http.Client, baseURL, userID string) {
 	t.Helper()
 
-	query := url.Values{"user_id": {testUserID}}
 	request, err := http.NewRequestWithContext(
 		context.Background(),
 		http.MethodGet,
-		baseURL+"/budgets?"+query.Encode(),
+		baseURL+"/budgets",
 		http.NoBody,
 	)
 	if err != nil {
@@ -332,18 +337,17 @@ func assertBudgetList(t *testing.T, client *http.Client, baseURL string) {
 		t.Fatalf("expected one budget, got %d", len(budgets))
 	}
 	budget := budgets[0]
-	if budget.UserID != testUserID ||
+	if budget.UserID != userID ||
 		budget.Category != testCategory ||
 		budget.Limit != 3000 {
 		t.Fatalf("unexpected budget: %+v", budget)
 	}
 }
 
-func assertTransactionList(t *testing.T, client *http.Client, baseURL string) {
+func assertTransactionList(t *testing.T, client *http.Client, baseURL, userID string) {
 	t.Helper()
 
 	query := url.Values{
-		"user_id":  {testUserID},
 		"category": {testCategory},
 		"from":     {"2026-09-01T00:00:00Z"},
 		"to":       {"2026-10-01T00:00:00Z"},
@@ -381,7 +385,7 @@ func assertTransactionList(t *testing.T, client *http.Client, baseURL string) {
 		t.Fatalf("expected one transaction, got %d", len(transactions))
 	}
 	transaction := transactions[0]
-	if transaction.UserID != testUserID ||
+	if transaction.UserID != userID ||
 		transaction.Amount != 2000 ||
 		transaction.Category != testCategory ||
 		transaction.Description != "end-to-end" {
@@ -511,13 +515,17 @@ func cleanupData(t *testing.T, database *pgxpool.Pool) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if _, err := database.Exec(ctx, "DELETE FROM transactions WHERE user_id = $1", testUserID); err != nil {
+	if _, err := database.Exec(
+		ctx,
+		"DELETE FROM transactions WHERE user_id IN (SELECT id FROM users WHERE email = $1)",
+		testEmail,
+	); err != nil {
 		t.Fatalf("cleanup transactions: %v", err)
 	}
 	if _, err := database.Exec(
 		ctx,
-		"DELETE FROM budgets WHERE user_id = $1 AND category = $2",
-		testUserID,
+		"DELETE FROM budgets WHERE user_id IN (SELECT id FROM users WHERE email = $1) AND category = $2",
+		testEmail,
 		testCategory,
 	); err != nil {
 		t.Fatalf("cleanup budget: %v", err)
