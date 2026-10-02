@@ -1,0 +1,462 @@
+openapi: 3.0.3
+info:
+  title: Personal Finance Analytics API
+  version: 1.0.0
+  description: HTTP API for authentication, budgets, transactions, and reports.
+servers:
+  - url: http://localhost:8080
+tags:
+  - name: health
+  - name: auth
+  - name: budgets
+  - name: transactions
+  - name: reports
+paths:
+  /ping:
+    get:
+      tags: [health]
+      operationId: ping
+      responses:
+        '200':
+          description: Service is ready.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PingResponse'
+  /openapi.yaml:
+    get:
+      tags: [health]
+      operationId: getOpenAPISpecification
+      responses:
+        '200':
+          description: OpenAPI specification.
+          content:
+            application/yaml:
+              schema:
+                type: string
+  /auth/register:
+    post:
+      tags: [auth]
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CredentialsRequest'
+      responses:
+        '201':
+          description: User registered.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Email is already registered.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/login:
+    post:
+      tags: [auth]
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CredentialsRequest'
+      responses:
+        '200':
+          description: JWT access token issued.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Invalid credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /budgets/{category}:
+    put:
+      tags: [budgets]
+      operationId: upsertBudget
+      security: [{bearerAuth: []}]
+      parameters:
+        - $ref: '#/components/parameters/CategoryPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertBudgetRequest'
+      responses:
+        '200':
+          description: Budget created or updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /budgets:
+    get:
+      tags: [budgets]
+      operationId: getBudgets
+      security: [{bearerAuth: []}]
+      responses:
+        '200':
+          description: Budgets belonging to the authenticated user.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Budget'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /transactions:
+    post:
+      tags: [transactions]
+      operationId: createTransaction
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransactionRequest'
+      responses:
+        '201':
+          description: Transaction created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Budget exceeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags: [transactions]
+      operationId: getTransactions
+      security: [{bearerAuth: []}]
+      parameters:
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - $ref: '#/components/parameters/CategoryQuery'
+      responses:
+        '200':
+          description: Transactions belonging to the authenticated user.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /transactions/import:
+    post:
+      tags: [transactions]
+      operationId: importTransactions
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          text/csv:
+            schema:
+              type: string
+              format: binary
+              description: CSV with amount, category, description, occurred_at columns.
+      responses:
+        '200':
+          description: Number of imported transactions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportTransactionsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: A transaction would exceed its budget.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /transactions/export:
+    get:
+      tags: [transactions]
+      operationId: exportTransactions
+      security: [{bearerAuth: []}]
+      parameters:
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - $ref: '#/components/parameters/CategoryQuery'
+      responses:
+        '200':
+          description: CSV export of transactions belonging to the authenticated user.
+          content:
+            text/csv:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /reports/summary:
+    get:
+      tags: [reports]
+      operationId: getSummary
+      security: [{bearerAuth: []}]
+      parameters:
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+      responses:
+        '200':
+          description: Spending summary for the authenticated user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Summary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    CategoryPath:
+      name: category
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+    CategoryQuery:
+      name: category
+      in: query
+      required: false
+      schema:
+        type: string
+    From:
+      name: from
+      in: query
+      required: true
+      description: Inclusive period start in RFC3339 format.
+      schema:
+        type: string
+        format: date-time
+    To:
+      name: to
+      in: query
+      required: true
+      description: Exclusive period end in RFC3339 format.
+      schema:
+        type: string
+        format: date-time
+  responses:
+    BadRequest:
+      description: Invalid request.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication is required or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    PingResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          example: ok
+    CredentialsRequest:
+      type: object
+      required: [email, password]
+      additionalProperties: false
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    User:
+      type: object
+      required: [id, email, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        created_at:
+          type: string
+          format: date-time
+    LoginResponse:
+      type: object
+      required: [user_id, email, access_token, expires_at]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        access_token:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+    UpsertBudgetRequest:
+      type: object
+      required: [limit_amount]
+      additionalProperties: false
+      properties:
+        limit_amount:
+          type: integer
+          format: int64
+          minimum: 1
+    Budget:
+      type: object
+      required: [id, user_id, category, limit_amount]
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        category:
+          type: string
+        limit_amount:
+          type: integer
+          format: int64
+    CreateTransactionRequest:
+      type: object
+      required: [amount, category, occurred_at]
+      additionalProperties: false
+      properties:
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+        category:
+          type: string
+        description:
+          type: string
+        occurred_at:
+          type: string
+          format: date-time
+    Transaction:
+      type: object
+      required: [id, user_id, amount, category, description, occurred_at, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        amount:
+          type: integer
+          format: int64
+        category:
+          type: string
+        description:
+          type: string
+        occurred_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+    ImportTransactionsResponse:
+      type: object
+      required: [imported_count]
+      properties:
+        imported_count:
+          type: integer
+          format: int64
+          minimum: 0
+    Summary:
+      type: object
+      required: [user_id, from, to, total_spent, categories]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        total_spent:
+          type: integer
+          format: int64
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategorySummary'
+    CategorySummary:
+      type: object
+      required: [category, spent, budget_limit, budget_configured, remaining, budget_exceeded]
+      properties:
+        category:
+          type: string
+        spent:
+          type: integer
+          format: int64
+        budget_limit:
+          type: integer
+          format: int64
+        budget_configured:
+          type: boolean
+        remaining:
+          type: integer
+          format: int64
+        budget_exceeded:
+          type: boolean
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
