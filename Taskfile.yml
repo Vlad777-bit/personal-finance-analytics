@@ -276,6 +276,7 @@ tasks:
             -tags=integration \
             -count=1 \
             -v \
+            ./internal/app \
             ./internal/repository/database/...
         )
 
