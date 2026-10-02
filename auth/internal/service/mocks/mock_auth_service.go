@@ -27,22 +27,22 @@ func (_m *AuthService) EXPECT() *AuthService_Expecter {
 }
 
 // Login provides a mock function with given fields: ctx, input
-func (_m *AuthService) Login(ctx context.Context, input service.LoginInput) (domain.User, error) {
+func (_m *AuthService) Login(ctx context.Context, input service.LoginInput) (service.LoginResult, error) {
 	ret := _m.Called(ctx, input)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Login")
 	}
 
-	var r0 domain.User
+	var r0 service.LoginResult
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.LoginInput) (domain.User, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.LoginInput) (service.LoginResult, error)); ok {
 		return rf(ctx, input)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.LoginInput) domain.User); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.LoginInput) service.LoginResult); ok {
 		r0 = rf(ctx, input)
 	} else {
-		r0 = ret.Get(0).(domain.User)
+		r0 = ret.Get(0).(service.LoginResult)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, service.LoginInput) error); ok {
@@ -73,12 +73,12 @@ func (_c *AuthService_Login_Call) Run(run func(ctx context.Context, input servic
 	return _c
 }
 
-func (_c *AuthService_Login_Call) Return(_a0 domain.User, _a1 error) *AuthService_Login_Call {
+func (_c *AuthService_Login_Call) Return(_a0 service.LoginResult, _a1 error) *AuthService_Login_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *AuthService_Login_Call) RunAndReturn(run func(context.Context, service.LoginInput) (domain.User, error)) *AuthService_Login_Call {
+func (_c *AuthService_Login_Call) RunAndReturn(run func(context.Context, service.LoginInput) (service.LoginResult, error)) *AuthService_Login_Call {
 	_c.Call.Return(run)
 	return _c
 }

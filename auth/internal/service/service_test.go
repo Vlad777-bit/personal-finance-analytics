@@ -18,6 +18,21 @@ type fakePasswordHasher struct {
 	matches func(context.Context, string, string) (bool, error)
 }
 
+type fakeTokenIssuer struct {
+	issue func(context.Context, domain.User) (service.AccessToken, error)
+}
+
+func (f *fakeTokenIssuer) Issue(
+	ctx context.Context,
+	user domain.User,
+) (service.AccessToken, error) {
+	if f.issue == nil {
+		return service.AccessToken{Value: "access-token"}, nil
+	}
+
+	return f.issue(ctx, user)
+}
+
 func (f *fakePasswordHasher) Hash(ctx context.Context, password string) (string, error) {
 	if f.hash == nil {
 		return "password-hash", nil
@@ -110,7 +125,7 @@ func TestService_Register(t *testing.T) {
 
 			userRepository := repositorymocks.NewUserRepository(t)
 			tt.prepare(userRepository)
-			authService := service.New(userRepository, tt.hasher)
+			authService := service.New(userRepository, tt.hasher, &fakeTokenIssuer{})
 
 			got, err := authService.Register(t.Context(), tt.input)
 			require.ErrorIs(t, err, tt.wantErr)
@@ -131,7 +146,8 @@ func TestService_Login(t *testing.T) {
 		input   service.LoginInput
 		hasher  *fakePasswordHasher
 		prepare func(*repositorymocks.UserRepository)
-		want    domain.User
+		issuer  *fakeTokenIssuer
+		want    service.LoginResult
 		wantErr error
 	}{
 		{
@@ -141,12 +157,22 @@ func TestService_Login(t *testing.T) {
 			prepare: func(repository *repositorymocks.UserRepository) {
 				repository.EXPECT().GetByEmail(mock.Anything, "user@example.com").Return(storedUser, nil)
 			},
-			want: storedUser,
+			issuer: &fakeTokenIssuer{issue: func(_ context.Context, user domain.User) (service.AccessToken, error) {
+				require.Equal(t, storedUser, user)
+
+				return service.AccessToken{Value: "access-token"}, nil
+			}},
+			want: service.LoginResult{
+				UserID:      storedUser.ID,
+				Email:       storedUser.Email,
+				AccessToken: service.AccessToken{Value: "access-token"},
+			},
 		},
 		{
 			name:    "invalid email",
 			input:   service.LoginInput{Email: "invalid", Password: "password"},
 			hasher:  &fakePasswordHasher{},
+			issuer:  &fakeTokenIssuer{},
 			prepare: func(*repositorymocks.UserRepository) {},
 			wantErr: domain.ErrInvalidCredentials,
 		},
@@ -154,6 +180,7 @@ func TestService_Login(t *testing.T) {
 			name:   "user not found",
 			input:  service.LoginInput{Email: "user@example.com", Password: "password"},
 			hasher: &fakePasswordHasher{},
+			issuer: &fakeTokenIssuer{},
 			prepare: func(repository *repositorymocks.UserRepository) {
 				repository.EXPECT().GetByEmail(mock.Anything, "user@example.com").
 					Return(domain.User{}, domain.ErrUserNotFound)
@@ -166,6 +193,7 @@ func TestService_Login(t *testing.T) {
 			hasher: &fakePasswordHasher{matches: func(context.Context, string, string) (bool, error) {
 				return false, nil
 			}},
+			issuer: &fakeTokenIssuer{},
 			prepare: func(repository *repositorymocks.UserRepository) {
 				repository.EXPECT().GetByEmail(mock.Anything, "user@example.com").Return(storedUser, nil)
 			},
@@ -175,6 +203,7 @@ func TestService_Login(t *testing.T) {
 			name:   "repository error",
 			input:  service.LoginInput{Email: "user@example.com", Password: "password"},
 			hasher: &fakePasswordHasher{},
+			issuer: &fakeTokenIssuer{},
 			prepare: func(repository *repositorymocks.UserRepository) {
 				repository.EXPECT().GetByEmail(mock.Anything, "user@example.com").
 					Return(domain.User{}, errDependency)
@@ -186,6 +215,19 @@ func TestService_Login(t *testing.T) {
 			input: service.LoginInput{Email: "user@example.com", Password: "password"},
 			hasher: &fakePasswordHasher{matches: func(context.Context, string, string) (bool, error) {
 				return false, errDependency
+			}},
+			issuer: &fakeTokenIssuer{},
+			prepare: func(repository *repositorymocks.UserRepository) {
+				repository.EXPECT().GetByEmail(mock.Anything, "user@example.com").Return(storedUser, nil)
+			},
+			wantErr: errDependency,
+		},
+		{
+			name:   "token issuer error",
+			input:  service.LoginInput{Email: "user@example.com", Password: "password"},
+			hasher: &fakePasswordHasher{},
+			issuer: &fakeTokenIssuer{issue: func(context.Context, domain.User) (service.AccessToken, error) {
+				return service.AccessToken{}, errDependency
 			}},
 			prepare: func(repository *repositorymocks.UserRepository) {
 				repository.EXPECT().GetByEmail(mock.Anything, "user@example.com").Return(storedUser, nil)
@@ -200,7 +242,7 @@ func TestService_Login(t *testing.T) {
 
 			userRepository := repositorymocks.NewUserRepository(t)
 			tt.prepare(userRepository)
-			authService := service.New(userRepository, tt.hasher)
+			authService := service.New(userRepository, tt.hasher, tt.issuer)
 
 			got, err := authService.Login(t.Context(), tt.input)
 			require.ErrorIs(t, err, tt.wantErr)
