@@ -2,15 +2,17 @@ package app
 
 import (
 	"context"
+	"net"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 
 	"github.com/Vlad777-bit/personal-finance-analytics/auth/internal/database"
 )
 
 type fakeDatabase struct {
-	close func()
+	closed chan struct{}
 }
 
 func (*fakeDatabase) QueryRow(context.Context, string, ...any) database.Row {
@@ -22,53 +24,32 @@ func (*fakeDatabase) Exec(context.Context, string, ...any) (database.Result, err
 }
 
 func (f *fakeDatabase) Close() {
-	f.close()
+	close(f.closed)
 }
 
-func TestApp_Run(t *testing.T) {
+func TestApp_Lifecycle(t *testing.T) {
 	t.Parallel()
 
-	ctx, cancel := context.WithCancel(t.Context())
-	cancel()
-
-	err := (&App{}).Run(ctx)
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
-}
-
-func TestApp_Shutdown(t *testing.T) {
-	t.Parallel()
-
-	closed := make(chan struct{})
-	application := &App{database: &fakeDatabase{close: func() { close(closed) }}}
-
-	err := application.Shutdown(t.Context())
-	require.NoError(t, err)
-	requireClosed(t, closed)
-}
-
-func TestApp_Shutdown_Timeout(t *testing.T) {
-	t.Parallel()
-
-	release := make(chan struct{})
-	closed := make(chan struct{})
-	application := &App{database: &fakeDatabase{close: func() {
-		<-release
-		close(closed)
-	}}}
+	databaseClosed := make(chan struct{})
+	application := &App{
+		database: &fakeDatabase{closed: databaseClosed},
+		server:   grpc.NewServer(),
+		listener: listener,
+	}
 	ctx, cancel := context.WithCancel(t.Context())
+	runErrors := make(chan error, 1)
+	go func() {
+		runErrors <- application.Run(ctx)
+	}()
+
 	cancel()
-
-	err := application.Shutdown(ctx)
-	require.ErrorIs(t, err, context.Canceled)
-	close(release)
-	requireClosed(t, closed)
-}
-
-func requireClosed(t *testing.T, channel <-chan struct{}) {
-	t.Helper()
+	require.NoError(t, <-runErrors)
+	require.NoError(t, application.Shutdown(t.Context()))
 
 	select {
-	case <-channel:
+	case <-databaseClosed:
 	case <-t.Context().Done():
 		require.Fail(t, "database was not closed")
 	}

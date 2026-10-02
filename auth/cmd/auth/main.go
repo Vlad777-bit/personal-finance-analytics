@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log/slog"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -31,6 +32,7 @@ func run() int {
 		syscall.SIGTERM,
 	)
 	defer stop()
+	grpcAddress := net.JoinHostPort("", cfg.GRPCPort)
 
 	application, err := app.New(
 		signalContext,
@@ -39,6 +41,7 @@ func run() int {
 		cfg.JWTSecret,
 		cfg.JWTIssuer,
 		cfg.JWTAccessTTL,
+		grpcAddress,
 	)
 	if err != nil {
 		logger.Error("initialize auth application", "error", err)
@@ -46,7 +49,7 @@ func run() int {
 		return 1
 	}
 
-	logger.Info("auth service started")
+	logger.Info("auth service started", "grpc_addr", grpcAddress)
 	runErr := application.Run(signalContext)
 	if runErr != nil {
 		logger.Error("run auth application", "error", runErr)

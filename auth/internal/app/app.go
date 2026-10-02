@@ -3,7 +3,11 @@ package app
 import (
 	"context"
 	"fmt"
+	"net"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
 	"github.com/Vlad777-bit/personal-finance-analytics/auth/internal/database"
 	dbpgx "github.com/Vlad777-bit/personal-finance-analytics/auth/internal/database/pgx"
@@ -11,11 +15,14 @@ import (
 	userrepository "github.com/Vlad777-bit/personal-finance-analytics/auth/internal/repository/database/user"
 	"github.com/Vlad777-bit/personal-finance-analytics/auth/internal/service"
 	tokenjwt "github.com/Vlad777-bit/personal-finance-analytics/auth/internal/token/jwt"
+	grpctransport "github.com/Vlad777-bit/personal-finance-analytics/auth/internal/transport/grpc"
+	authv1 "github.com/Vlad777-bit/personal-finance-analytics/shared/gen/go/auth/v1"
 )
 
 type App struct {
-	database    database.DB
-	authService service.AuthService
+	database database.DB
+	server   *grpc.Server
+	listener net.Listener
 }
 
 func New(
@@ -25,6 +32,7 @@ func New(
 	jwtSecret string,
 	jwtIssuer string,
 	jwtAccessTTL time.Duration,
+	grpcAddress string,
 ) (*App, error) {
 	passwordHasher, err := passwordbcrypt.New(bcryptCost)
 	if err != nil {
@@ -50,31 +58,61 @@ func New(
 		passwordHasher,
 		tokenIssuer,
 	)
+	grpcServer := grpc.NewServer()
+	authv1.RegisterAuthServiceServer(
+		grpcServer,
+		grpctransport.New(authService),
+	)
+	reflection.Register(grpcServer)
+
+	listener, err := net.Listen("tcp", grpcAddress)
+	if err != nil {
+		databaseClient.Close()
+
+		return nil, fmt.Errorf("listen for gRPC connections: %w", err)
+	}
 
 	return &App{
-		database:    databaseClient,
-		authService: authService,
+		database: databaseClient,
+		server:   grpcServer,
+		listener: listener,
 	}, nil
 }
 
 func (a *App) Run(ctx context.Context) error {
-	<-ctx.Done()
+	serveError := make(chan error, 1)
 
-	return nil
+	go func() {
+		serveError <- a.server.Serve(a.listener)
+	}()
+
+	select {
+	case <-ctx.Done():
+		return nil
+	case err := <-serveError:
+		return fmt.Errorf("serve gRPC: %w", err)
+	}
 }
 
 func (a *App) Shutdown(ctx context.Context) error {
 	done := make(chan struct{})
 
 	go func() {
-		a.database.Close()
+		a.server.GracefulStop()
 		close(done)
 	}()
 
 	select {
 	case <-done:
-		return nil
 	case <-ctx.Done():
-		return fmt.Errorf("shutdown auth application: %w", ctx.Err())
+		a.server.Stop()
+		<-done
+		a.database.Close()
+
+		return fmt.Errorf("shutdown gRPC server: %w", ctx.Err())
 	}
+
+	a.database.Close()
+
+	return nil
 }
