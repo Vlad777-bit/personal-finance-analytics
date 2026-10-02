@@ -1,19 +1,37 @@
 # syntax=docker/dockerfile:1
 FROM golang:1.26-alpine AS builder
 
-WORKDIR /src/gateway
+ARG SERVICE
 
-COPY gateway/go.mod ./go.mod
-COPY gateway ./
+WORKDIR /src
 
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/gateway ./cmd/gateway
+COPY go.work ./go.work
+COPY auth/go.mod auth/go.sum ./auth/
+COPY gateway/go.mod gateway/go.sum ./gateway/
+COPY ledger/go.mod ledger/go.sum ./ledger/
+COPY shared/go.mod shared/go.sum ./shared/
+
+RUN go mod download
+
+COPY auth ./auth
+COPY gateway ./gateway
+COPY ledger ./ledger
+COPY shared ./shared
+
+RUN test -n "${SERVICE}" \
+    && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" \
+       -o "/out/${SERVICE}" "./${SERVICE}/cmd/${SERVICE}"
 
 FROM alpine:3.22
 
 RUN addgroup -S app && adduser -S app -G app
 USER app
 
-COPY --from=builder /out/gateway /usr/local/bin/gateway
+ARG SERVICE
 
-EXPOSE 8080
-ENTRYPOINT ["gateway"]
+ENV SERVICE=${SERVICE}
+
+COPY --from=builder "/out/${SERVICE}" "/usr/local/bin/${SERVICE}"
+
+ENTRYPOINT ["/bin/sh", "-c"]
+CMD ["exec /usr/local/bin/${SERVICE}"]

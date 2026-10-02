@@ -3,33 +3,92 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        SERVICE: gateway
     environment:
       APP_ENV: ${APP_ENV:-local}
       GATEWAY_HTTP_ADDR: :8080
+      LEDGER_GRPC_HOST: ledger
+      LEDGER_GRPC_PORT: 9090
+      AUTH_GRPC_HOST: auth
+      AUTH_GRPC_PORT: 9091
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?AUTH_JWT_SECRET must be set}
+      AUTH_JWT_ISSUER: ${AUTH_JWT_ISSUER:-personal-finance-analytics/auth}
     ports:
       - "8080:8080"
+    depends_on:
+      ledger:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ledger:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: ledger
+    environment:
+      LEDGER_DATABASE_URL: postgres://${POSTGRES_USER:-finance}:${POSTGRES_PASSWORD:-finance}@postgres:5432/${POSTGRES_DB:-finance}?sslmode=disable
+      LEDGER_GRPC_PORT: 9090
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      LEDGER_SUMMARY_CACHE_TTL: ${LEDGER_SUMMARY_CACHE_TTL:-5m}
+    expose:
+      - "9090"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "kill -0 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  auth:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: auth
+    environment:
+      AUTH_DATABASE_URL: postgres://${POSTGRES_USER:-finance}:${POSTGRES_PASSWORD:-finance}@postgres:5432/${POSTGRES_DB:-finance}?sslmode=disable
+      AUTH_GRPC_PORT: 9091
+      AUTH_BCRYPT_COST: ${AUTH_BCRYPT_COST:-12}
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?AUTH_JWT_SECRET must be set}
+      AUTH_JWT_ISSUER: ${AUTH_JWT_ISSUER:-personal-finance-analytics/auth}
+      AUTH_JWT_ACCESS_TTL: ${AUTH_JWT_ACCESS_TTL:-15m}
+    expose:
+      - "9091"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "kill -0 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     restart: unless-stopped
 
   postgres:
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-finance}
+      POSTGRES_USER: ${POSTGRES_USER:-finance}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-finance}
     ports:
-      - "${POSTGRES_PORT}:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}",
+          "pg_isready -U ${POSTGRES_USER:-finance} -d ${POSTGRES_DB:-finance}",
         ]
       interval: 5s
       timeout: 5s
