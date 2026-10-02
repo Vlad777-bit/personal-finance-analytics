@@ -1,45 +1,80 @@
 # Personal Finance Analytics
 
-Учебный микросервисный проект для учёта и анализа личных трат.
+Учебный production-like проект на Go для учёта личных расходов и анализа трат.
 
-## Текущий этап
+Проект состоит из Gateway, Ledger и Auth, которые взаимодействуют по gRPC. Внешний API Gateway — HTTP.
 
-Репозиторий организован как Go workspace с отдельными модулями `gateway`, `ledger`, `auth` и `shared`.
-На текущей итерации рабочим HTTP-процессом является Gateway с `GET /ping`; PostgreSQL и Redis запускаются через Compose. Ledger и Auth пока содержат минимальные entrypoint-заглушки и будут развиваться отдельными итерациями.
+## Архитектура
+
+```text
+HTTP client
+    |
+    v
+gateway :8080
+    |-------------- gRPC ------------> auth :9091 ----> PostgreSQL
+    |
+    |-------------- gRPC ------------> ledger :9090 --> PostgreSQL
+                                                  \
+                                                   --> Redis
+```
+
+Модули workspace:
+
+- `gateway` — HTTP API, JWT middleware, Auth/Ledger gRPC clients;
+- `ledger` — budgets, transactions, reports, CSV import/export и Redis cache;
+- `auth` — регистрация, login, bcrypt и JWT issue;
+- `shared` — protobuf contracts и generated Go code.
+
+Бизнес-слой не зависит от PostgreSQL, Redis, HTTP или gRPC. Persistence разделён на database abstraction, repositories и database adapters.
 
 ## Требования
 
-- Go 1.26+ (проект фиксирует минимальную версию Go 1.26; разработка на Go 1.27 также допустима)
-- Docker Compose-совместимый CLI или Podman с Compose
-- Task — опционально, используется только как удобный developer-интерфейс
+- Go 1.26+;
+- Docker Compose или Podman Compose;
+- Task опционален;
+- PostgreSQL и Redis локально устанавливать не нужно.
 
-## Структура workspace
-
-```text
-.
-├── auth/
-├── gateway/
-├── ledger/
-├── shared/
-├── bin/
-├── go.work
-├── compose.yaml
-├── Dockerfile
-└── Taskfile.yml
-```
-
-Go-модули:
-
-- `github.com/Vlad777-bit/personal-finance-analytics/gateway`
-- `github.com/Vlad777-bit/personal-finance-analytics/ledger`
-- `github.com/Vlad777-bit/personal-finance-analytics/auth`
-- `github.com/Vlad777-bit/personal-finance-analytics/shared`
-
-## Быстрый старт без Task
+## Конфигурация
 
 ```bash
 cp .env.example .env
-docker compose -f compose.yaml up -d --build
+```
+
+Основные значения по умолчанию:
+
+```dotenv
+POSTGRES_DB=finance
+POSTGRES_USER=finance
+POSTGRES_PASSWORD=finance
+POSTGRES_PORT=5432
+
+LEDGER_DATABASE_URL=postgres://finance:finance@localhost:5432/finance?sslmode=disable
+AUTH_DATABASE_URL=postgres://finance:finance@localhost:5432/finance?sslmode=disable
+
+LEDGER_GRPC_PORT=9090
+AUTH_GRPC_PORT=9091
+REDIS_HOST=localhost
+REDIS_PORT=6379
+```
+
+`AUTH_JWT_SECRET` должен содержать минимум 32 байта. Не используйте production secret из `.env.example`.
+
+## Запуск через Compose
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+
+Для Podman:
+
+```bash
+podman compose up -d --build
+```
+
+Проверка Gateway:
+
+```bash
 curl http://localhost:8080/ping
 ```
 
@@ -49,70 +84,197 @@ curl http://localhost:8080/ping
 {"status":"ok"}
 ```
 
+После первого запуска примените миграции:
+
+```bash
+task migration:up
+task migration:auth:up
+```
+
+Без Task эквивалентные команды выполняются локальным бинарником Goose:
+
+```bash
+./bin/goose -dir migrations/ledger postgres "$LEDGER_DATABASE_URL" up
+./bin/goose -table goose_auth_db_version -dir migrations/auth postgres "$AUTH_DATABASE_URL" up
+```
+
 Остановка:
 
 ```bash
-docker compose -f compose.yaml down
+docker compose down
+# или
+podman compose down
 ```
 
-## Проверки без Task
+## OpenAPI
 
-Из корня репозитория:
+Спецификация доступна после запуска Gateway:
+
+```text
+http://localhost:8080/openapi.yaml
+```
+
+Файл можно импортировать в Postman или другой API client:
 
 ```bash
-go work sync
-
-for module in gateway ledger auth shared; do
-  (cd "$module" && go mod tidy)
-done
-
-for module in gateway ledger auth shared; do
-  if (cd "$module" && go list ./... 2>/dev/null | grep -q .); then
-    (cd "$module" && go test ./...)
-  fi
-done
-
-for module in gateway ledger auth shared; do
-  if (cd "$module" && go list ./... 2>/dev/null | grep -q .); then
-    (cd "$module" && go test -race ./...)
-  fi
-done
+curl http://localhost:8080/openapi.yaml -o openapi.yaml
 ```
 
-## Через Task
+## JWT flow
+
+Зарегистрируйте пользователя:
+
+```bash
+curl -X POST http://localhost:8080/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"user@example.com","password":"secure-password"}'
+```
+
+Получите access token:
+
+```bash
+curl -X POST http://localhost:8080/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"user@example.com","password":"secure-password"}'
+```
+
+Передавайте токен в защищённые endpoints:
+
+```bash
+export ACCESS_TOKEN='<access_token>'
+curl http://localhost:8080/budgets \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+```
+
+`user_id` для Ledger-запросов не принимается от клиента. Gateway получает identity из JWT и передаёт её в Ledger.
+
+## HTTP API
+
+### Budgets
+
+Создать или обновить бюджет:
+
+```bash
+curl -X PUT http://localhost:8080/budgets/food \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"limit_amount":3000}'
+```
+
+Получить бюджеты текущего пользователя:
+
+```bash
+curl http://localhost:8080/budgets \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+```
+
+### Transactions
+
+Создать транзакцию. Денежные суммы передаются в минимальных денежных единицах и хранятся как `int64`:
+
+```bash
+curl -X POST http://localhost:8080/transactions \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "amount": 1500,
+    "category": "food",
+    "description": "lunch",
+    "occurred_at": "2026-10-01T12:00:00Z"
+  }'
+```
+
+Получить транзакции за период:
+
+```bash
+curl 'http://localhost:8080/transactions?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z&category=food' \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+```
+
+### Reports
+
+```bash
+curl 'http://localhost:8080/reports/summary?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z' \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+```
+
+Отчёты кешируются в Redis с TTL. В логах Ledger отображаются cache hit/miss.
+
+### CSV
+
+CSV format:
+
+```csv
+amount,category,description,occurred_at
+1500,food,lunch,2026-10-01T12:00:00Z
+```
+
+Импорт:
+
+```bash
+curl -X POST http://localhost:8080/transactions/import \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H 'Content-Type: text/csv' \
+  --data-binary @transactions.csv
+```
+
+Экспорт:
+
+```bash
+curl 'http://localhost:8080/transactions/export?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z' \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -o exported-transactions.csv
+```
+
+`user_id` отсутствует в CSV и определяется по JWT. Максимальный размер HTTP import — 10 MiB.
+
+## Миграции
+
+Создание Ledger migration без подключения к БД:
+
+```bash
+task migration:create NAME=create_example
+```
+
+Статус и применение:
+
+```bash
+task migration:status
+task migration:up
+task migration:down
+
+task migration:auth:status
+task migration:auth:up
+task migration:auth:down
+```
+
+Используется Goose `v3.28.0`.
+
+## Проверки
+
+Все developer tools устанавливаются в `./bin`:
 
 ```bash
 task tools
-task deps:update
 task format
 task test
 task test:race
+task test:integration
 task lint
-task up
-```
-
-Все внешние developer-инструменты устанавливаются в `./bin`. Содержимое `bin` не коммитится, кроме `.gitkeep`.
-
-## Podman
-
-Если `docker` указывает на Docker-compatible Podman CLI, команды из README работают без изменений. Иначе используй эквивалент:
-
-```bash
-podman compose -f compose.yaml up -d --build
-podman compose -f compose.yaml down
-```
-
-## Protobuf
-
-Buf-конфигурация находится в `shared/proto`.
-
-```bash
 task proto:lint
 task proto:gen
+task mockery:gen
 ```
 
-Generated Go-код будет помещаться в `shared/gen/go`.
+Integration tests требуют работающие PostgreSQL и Redis и запускаются отдельно от unit tests.
 
-## Mockery
+Эквивалент unit/race проверки без Task:
 
-Mockery устанавливается локально в `./bin`. На текущем этапе `packages` в `.mockery.yaml` пуст, потому что интерфейсы Ledger/Auth ещё не введены. Они будут добавлены вместе с соответствующей бизнес-логикой, чтобы конфигурация не ссылалась на несуществующие пакеты.
+```bash
+go test ./...
+go test -race ./...
+```
+
+## Google Sheets
+
+Google Apps Script integration ещё не добавлена. Следующий этап проекта — скрипт для создания транзакции и получения отчёта через Gateway с JWT, а также пример структуры Google Sheet.
