@@ -27,6 +27,7 @@ vars:
   GOOSE: '{{.ROOT_DIR}}/bin/goose'
 
   LEDGER_MIGRATIONS_DIR: '{{.ROOT_DIR}}/migrations/ledger'
+  AUTH_MIGRATIONS_DIR: '{{.ROOT_DIR}}/migrations/auth'
 
 silent: true
 
@@ -251,6 +252,9 @@ tasks:
           exit 1
         fi
   
+        AUTH_DATABASE_URL="${AUTH_DATABASE_URL:-$LEDGER_DATABASE_URL}"
+        export AUTH_DATABASE_URL
+
         echo "🧪 Running Ledger integration tests..."
   
         (
@@ -261,6 +265,17 @@ tasks:
             -v \
             ./internal/cache/redis \
             ./internal/app \
+            ./internal/repository/database/...
+        )
+
+        echo "🧪 Running Auth integration tests..."
+
+        (
+          cd auth
+          go test \
+            -tags=integration \
+            -count=1 \
+            -v \
             ./internal/repository/database/...
         )
 
@@ -432,3 +447,59 @@ tasks:
           down -v
 
         echo "✅ Migration reverted"
+
+  migration:auth:create:
+    desc: "Создаёт новую SQL-миграцию для Auth"
+    deps: [goose:install]
+    requires:
+      vars: [NAME]
+    cmds:
+      - |
+        set -e
+        mkdir -p "{{.AUTH_MIGRATIONS_DIR}}"
+        "{{.GOOSE}}" -dir "{{.AUTH_MIGRATIONS_DIR}}" -s create "{{.NAME}}" sql
+
+  migration:auth:status:
+    desc: "Показывает состояние миграций Auth"
+    deps: [goose:install]
+    cmds:
+      - |
+        set -a
+        [ ! -f .env ] || . ./.env
+        set +a
+        AUTH_DATABASE_URL="${AUTH_DATABASE_URL:-$LEDGER_DATABASE_URL}"
+        if [ -z "$AUTH_DATABASE_URL" ]; then
+          echo "❌ AUTH_DATABASE_URL is not set"
+          exit 1
+        fi
+        {{.GOOSE}} -table goose_auth_db_version -dir {{.AUTH_MIGRATIONS_DIR}} postgres "$AUTH_DATABASE_URL" status -v
+
+  migration:auth:up:
+    desc: "Применяет все pending-миграции Auth"
+    deps: [goose:install]
+    cmds:
+      - |
+        set -a
+        [ ! -f .env ] || . ./.env
+        set +a
+        AUTH_DATABASE_URL="${AUTH_DATABASE_URL:-$LEDGER_DATABASE_URL}"
+        if [ -z "$AUTH_DATABASE_URL" ]; then
+          echo "❌ AUTH_DATABASE_URL is not set"
+          exit 1
+        fi
+        {{.GOOSE}} -table goose_auth_db_version -dir {{.AUTH_MIGRATIONS_DIR}} postgres "$AUTH_DATABASE_URL" up -v
+
+  migration:auth:down:
+    desc: "Откатывает последнюю миграцию Auth"
+    deps: [goose:install]
+    cmds:
+      - |
+        set -a
+        [ ! -f .env ] || . ./.env
+        set +a
+        AUTH_DATABASE_URL="${AUTH_DATABASE_URL:-$LEDGER_DATABASE_URL}"
+        if [ -z "$AUTH_DATABASE_URL" ]; then
+          echo "❌ AUTH_DATABASE_URL is not set"
+          exit 1
+        fi
+        {{.GOOSE}} -table goose_auth_db_version -dir {{.AUTH_MIGRATIONS_DIR}} postgres "$AUTH_DATABASE_URL" down -v

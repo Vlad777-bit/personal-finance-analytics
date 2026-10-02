@@ -7,7 +7,10 @@ import (
 	"unicode/utf8"
 )
 
-const minimumPasswordLength = 8
+const (
+	maximumEmailLength    = 254
+	minimumPasswordLength = 8
+)
 
 type User struct {
 	ID           string
@@ -37,6 +40,9 @@ func NormalizeEmail(value string) (string, error) {
 	email := strings.ToLower(strings.TrimSpace(value))
 	if email == "" {
 		return "", ErrEmailRequired
+	}
+	if utf8.RuneCountInString(email) > maximumEmailLength {
+		return "", ErrEmailTooLong
 	}
 
 	address, err := mail.ParseAddress(email)

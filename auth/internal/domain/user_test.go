@@ -2,6 +2,7 @@ package domain_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/Vlad777-bit/personal-finance-analytics/auth/internal/domain"
@@ -9,6 +10,10 @@ import (
 
 func TestNormalizeEmail(t *testing.T) {
 	t.Parallel()
+	maximumLengthEmail := strings.Repeat("a", 64) + "@" +
+		strings.Repeat("b", 63) + "." +
+		strings.Repeat("c", 63) + "." +
+		strings.Repeat("d", 61)
 
 	tests := []struct {
 		name    string
@@ -17,9 +22,19 @@ func TestNormalizeEmail(t *testing.T) {
 		wantErr error
 	}{
 		{name: "normalizes email", email: "  User@Example.COM ", want: "user@example.com"},
+		{
+			name:  "email at maximum length",
+			email: maximumLengthEmail,
+			want:  maximumLengthEmail,
+		},
 		{name: "empty email", wantErr: domain.ErrEmailRequired},
 		{name: "invalid email", email: "not-an-email", wantErr: domain.ErrInvalidEmail},
 		{name: "display name is rejected", email: "User <user@example.com>", wantErr: domain.ErrInvalidEmail},
+		{
+			name:    "email exceeds maximum length",
+			email:   maximumLengthEmail + "x",
+			wantErr: domain.ErrEmailTooLong,
+		},
 	}
 
 	for _, tt := range tests {
