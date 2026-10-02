@@ -14,6 +14,9 @@ func TestLoad(t *testing.T) {
 		ledgerHost  string
 		ledgerPort  string
 		dialTimeout string
+		authHost    string
+		authPort    string
+		authTimeout string
 		shutdown    string
 		want        Config
 		wantError   bool
@@ -25,6 +28,9 @@ func TestLoad(t *testing.T) {
 				LedgerGRPCHost:        "localhost",
 				LedgerGRPCPort:        "9090",
 				LedgerGRPCDialTimeout: 5 * time.Second,
+				AuthGRPCHost:          "localhost",
+				AuthGRPCPort:          "9091",
+				AuthGRPCDialTimeout:   5 * time.Second,
 				ShutdownTimeout:       10 * time.Second,
 			},
 		},
@@ -34,12 +40,18 @@ func TestLoad(t *testing.T) {
 			ledgerHost:  "ledger",
 			ledgerPort:  "19090",
 			dialTimeout: "2s",
+			authHost:    "auth",
+			authPort:    "19091",
+			authTimeout: "4s",
 			shutdown:    "3s",
 			want: Config{
 				GatewayHTTPAddr:       ":8081",
 				LedgerGRPCHost:        "ledger",
 				LedgerGRPCPort:        "19090",
 				LedgerGRPCDialTimeout: 2 * time.Second,
+				AuthGRPCHost:          "auth",
+				AuthGRPCPort:          "19091",
+				AuthGRPCDialTimeout:   4 * time.Second,
 				ShutdownTimeout:       3 * time.Second,
 			},
 		},
@@ -47,6 +59,10 @@ func TestLoad(t *testing.T) {
 		{name: "zero port", ledgerPort: "0", wantError: true},
 		{name: "invalid timeout", dialTimeout: "soon", wantError: true},
 		{name: "zero timeout", dialTimeout: "0s", wantError: true},
+		{name: "invalid auth port", authPort: "grpc", wantError: true},
+		{name: "zero auth port", authPort: "0", wantError: true},
+		{name: "invalid auth timeout", authTimeout: "soon", wantError: true},
+		{name: "zero auth timeout", authTimeout: "0s", wantError: true},
 		{name: "invalid shutdown timeout", shutdown: "later", wantError: true},
 		{name: "zero shutdown timeout", shutdown: "0s", wantError: true},
 	}
@@ -57,6 +73,9 @@ func TestLoad(t *testing.T) {
 			t.Setenv("LEDGER_GRPC_HOST", test.ledgerHost)
 			t.Setenv("LEDGER_GRPC_PORT", test.ledgerPort)
 			t.Setenv("LEDGER_GRPC_DIAL_TIMEOUT", test.dialTimeout)
+			t.Setenv("AUTH_GRPC_HOST", test.authHost)
+			t.Setenv("AUTH_GRPC_PORT", test.authPort)
+			t.Setenv("AUTH_GRPC_DIAL_TIMEOUT", test.authTimeout)
 			t.Setenv("GATEWAY_SHUTDOWN_TIMEOUT", test.shutdown)
 
 			got, err := Load()
@@ -73,6 +92,11 @@ func TestLoad(t *testing.T) {
 				t,
 				test.want.LedgerGRPCHost+":"+test.want.LedgerGRPCPort,
 				got.LedgerGRPCAddress(),
+			)
+			require.Equal(
+				t,
+				test.want.AuthGRPCHost+":"+test.want.AuthGRPCPort,
+				got.AuthGRPCAddress(),
 			)
 		})
 	}

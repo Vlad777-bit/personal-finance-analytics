@@ -16,6 +16,9 @@ const (
 	defaultLedgerGRPCHost    = "localhost"
 	defaultLedgerGRPCPort    = "9090"
 	defaultLedgerDialTimeout = 5 * time.Second
+	defaultAuthGRPCHost      = "localhost"
+	defaultAuthGRPCPort      = "9091"
+	defaultAuthDialTimeout   = 5 * time.Second
 	defaultShutdownTimeout   = 10 * time.Second
 )
 
@@ -26,7 +29,14 @@ type Config struct {
 	LedgerGRPCHost        string
 	LedgerGRPCPort        string
 	LedgerGRPCDialTimeout time.Duration
+	AuthGRPCHost          string
+	AuthGRPCPort          string
+	AuthGRPCDialTimeout   time.Duration
 	ShutdownTimeout       time.Duration
+}
+
+func (c Config) AuthGRPCAddress() string {
+	return net.JoinHostPort(c.AuthGRPCHost, c.AuthGRPCPort)
 }
 
 func (c Config) LedgerGRPCAddress() string {
@@ -65,6 +75,33 @@ func Load() (Config, error) {
 		ledgerDialTimeout = parsedTimeout
 	}
 
+	authGRPCPort := envOrDefault("AUTH_GRPC_PORT", defaultAuthGRPCPort)
+	parsedAuthPort, err := strconv.ParseUint(authGRPCPort, 10, 16)
+	if err != nil || parsedAuthPort == 0 {
+		return Config{}, fmt.Errorf(
+			"AUTH_GRPC_PORT must be a number between 1 and 65535: %q",
+			authGRPCPort,
+		)
+	}
+
+	authDialTimeout := defaultAuthDialTimeout
+	if value := os.Getenv("AUTH_GRPC_DIAL_TIMEOUT"); value != "" {
+		parsedTimeout, parseErr := time.ParseDuration(value)
+		if parseErr != nil {
+			return Config{}, fmt.Errorf(
+				"parse AUTH_GRPC_DIAL_TIMEOUT: %w",
+				parseErr,
+			)
+		}
+		if parsedTimeout <= 0 {
+			return Config{}, errors.New(
+				"AUTH_GRPC_DIAL_TIMEOUT must be positive",
+			)
+		}
+
+		authDialTimeout = parsedTimeout
+	}
+
 	shutdownTimeout := defaultShutdownTimeout
 	if value := os.Getenv("GATEWAY_SHUTDOWN_TIMEOUT"); value != "" {
 		parsedTimeout, parseErr := time.ParseDuration(value)
@@ -88,6 +125,9 @@ func Load() (Config, error) {
 		LedgerGRPCHost:        envOrDefault("LEDGER_GRPC_HOST", defaultLedgerGRPCHost),
 		LedgerGRPCPort:        ledgerGRPCPort,
 		LedgerGRPCDialTimeout: ledgerDialTimeout,
+		AuthGRPCHost:          envOrDefault("AUTH_GRPC_HOST", defaultAuthGRPCHost),
+		AuthGRPCPort:          authGRPCPort,
+		AuthGRPCDialTimeout:   authDialTimeout,
 		ShutdownTimeout:       shutdownTimeout,
 	}, nil
 }
