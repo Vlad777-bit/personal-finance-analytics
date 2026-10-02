@@ -36,6 +36,14 @@ type fakeLedgerServiceClient struct {
 		context.Context,
 		*ledgerv1.GetSummaryRequest,
 	) (*ledgerv1.GetSummaryResponse, error)
+	importTransactions func(
+		context.Context,
+		*ledgerv1.ImportTransactionsRequest,
+	) (*ledgerv1.ImportTransactionsResponse, error)
+	exportTransactions func(
+		context.Context,
+		*ledgerv1.ExportTransactionsRequest,
+	) (*ledgerv1.ExportTransactionsResponse, error)
 }
 
 func (f *fakeLedgerServiceClient) CreateTransaction(
@@ -76,6 +84,30 @@ func (f *fakeLedgerServiceClient) GetSummary(
 	_ ...grpc.CallOption,
 ) (*ledgerv1.GetSummaryResponse, error) {
 	return f.getSummary(ctx, request)
+}
+
+func (f *fakeLedgerServiceClient) ImportTransactions(
+	ctx context.Context,
+	request *ledgerv1.ImportTransactionsRequest,
+	_ ...grpc.CallOption,
+) (*ledgerv1.ImportTransactionsResponse, error) {
+	if f.importTransactions == nil {
+		return nil, status.Error(codes.Unimplemented, "not configured")
+	}
+
+	return f.importTransactions(ctx, request)
+}
+
+func (f *fakeLedgerServiceClient) ExportTransactions(
+	ctx context.Context,
+	request *ledgerv1.ExportTransactionsRequest,
+	_ ...grpc.CallOption,
+) (*ledgerv1.ExportTransactionsResponse, error) {
+	if f.exportTransactions == nil {
+		return nil, status.Error(codes.Unimplemented, "not configured")
+	}
+
+	return f.exportTransactions(ctx, request)
 }
 
 func TestClient_CreateTransaction(t *testing.T) {

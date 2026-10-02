@@ -346,6 +346,214 @@ func (x *GetTransactionsResponse) GetTransactions() []*Transaction {
 	return nil
 }
 
+type ImportTransactionsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	CsvData       string                 `protobuf:"bytes,2,opt,name=csv_data,json=csvData,proto3" json:"csv_data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImportTransactionsRequest) Reset() {
+	*x = ImportTransactionsRequest{}
+	mi := &file_ledger_v1_ledger_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImportTransactionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImportTransactionsRequest) ProtoMessage() {}
+
+func (x *ImportTransactionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ledger_v1_ledger_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImportTransactionsRequest.ProtoReflect.Descriptor instead.
+func (*ImportTransactionsRequest) Descriptor() ([]byte, []int) {
+	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ImportTransactionsRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *ImportTransactionsRequest) GetCsvData() string {
+	if x != nil {
+		return x.CsvData
+	}
+	return ""
+}
+
+type ImportTransactionsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ImportedCount int64                  `protobuf:"varint,1,opt,name=imported_count,json=importedCount,proto3" json:"imported_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImportTransactionsResponse) Reset() {
+	*x = ImportTransactionsResponse{}
+	mi := &file_ledger_v1_ledger_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImportTransactionsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImportTransactionsResponse) ProtoMessage() {}
+
+func (x *ImportTransactionsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ledger_v1_ledger_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImportTransactionsResponse.ProtoReflect.Descriptor instead.
+func (*ImportTransactionsResponse) Descriptor() ([]byte, []int) {
+	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ImportTransactionsResponse) GetImportedCount() int64 {
+	if x != nil {
+		return x.ImportedCount
+	}
+	return 0
+}
+
+type ExportTransactionsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	From          *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=from,proto3" json:"from,omitempty"`
+	To            *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=to,proto3" json:"to,omitempty"`
+	Category      string                 `protobuf:"bytes,4,opt,name=category,proto3" json:"category,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExportTransactionsRequest) Reset() {
+	*x = ExportTransactionsRequest{}
+	mi := &file_ledger_v1_ledger_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExportTransactionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExportTransactionsRequest) ProtoMessage() {}
+
+func (x *ExportTransactionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ledger_v1_ledger_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExportTransactionsRequest.ProtoReflect.Descriptor instead.
+func (*ExportTransactionsRequest) Descriptor() ([]byte, []int) {
+	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ExportTransactionsRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *ExportTransactionsRequest) GetFrom() *timestamppb.Timestamp {
+	if x != nil {
+		return x.From
+	}
+	return nil
+}
+
+func (x *ExportTransactionsRequest) GetTo() *timestamppb.Timestamp {
+	if x != nil {
+		return x.To
+	}
+	return nil
+}
+
+func (x *ExportTransactionsRequest) GetCategory() string {
+	if x != nil {
+		return x.Category
+	}
+	return ""
+}
+
+type ExportTransactionsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CsvData       string                 `protobuf:"bytes,1,opt,name=csv_data,json=csvData,proto3" json:"csv_data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExportTransactionsResponse) Reset() {
+	*x = ExportTransactionsResponse{}
+	mi := &file_ledger_v1_ledger_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExportTransactionsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExportTransactionsResponse) ProtoMessage() {}
+
+func (x *ExportTransactionsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_ledger_v1_ledger_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExportTransactionsResponse.ProtoReflect.Descriptor instead.
+func (*ExportTransactionsResponse) Descriptor() ([]byte, []int) {
+	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ExportTransactionsResponse) GetCsvData() string {
+	if x != nil {
+		return x.CsvData
+	}
+	return ""
+}
+
 type Budget struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -358,7 +566,7 @@ type Budget struct {
 
 func (x *Budget) Reset() {
 	*x = Budget{}
-	mi := &file_ledger_v1_ledger_proto_msgTypes[5]
+	mi := &file_ledger_v1_ledger_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -370,7 +578,7 @@ func (x *Budget) String() string {
 func (*Budget) ProtoMessage() {}
 
 func (x *Budget) ProtoReflect() protoreflect.Message {
-	mi := &file_ledger_v1_ledger_proto_msgTypes[5]
+	mi := &file_ledger_v1_ledger_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -383,7 +591,7 @@ func (x *Budget) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Budget.ProtoReflect.Descriptor instead.
 func (*Budget) Descriptor() ([]byte, []int) {
-	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{5}
+	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *Budget) GetId() string {
@@ -425,7 +633,7 @@ type CreateBudgetRequest struct {
 
 func (x *CreateBudgetRequest) Reset() {
 	*x = CreateBudgetRequest{}
-	mi := &file_ledger_v1_ledger_proto_msgTypes[6]
+	mi := &file_ledger_v1_ledger_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -437,7 +645,7 @@ func (x *CreateBudgetRequest) String() string {
 func (*CreateBudgetRequest) ProtoMessage() {}
 
 func (x *CreateBudgetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ledger_v1_ledger_proto_msgTypes[6]
+	mi := &file_ledger_v1_ledger_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -450,7 +658,7 @@ func (x *CreateBudgetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateBudgetRequest.ProtoReflect.Descriptor instead.
 func (*CreateBudgetRequest) Descriptor() ([]byte, []int) {
-	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{6}
+	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *CreateBudgetRequest) GetUserId() string {
@@ -483,7 +691,7 @@ type CreateBudgetResponse struct {
 
 func (x *CreateBudgetResponse) Reset() {
 	*x = CreateBudgetResponse{}
-	mi := &file_ledger_v1_ledger_proto_msgTypes[7]
+	mi := &file_ledger_v1_ledger_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -495,7 +703,7 @@ func (x *CreateBudgetResponse) String() string {
 func (*CreateBudgetResponse) ProtoMessage() {}
 
 func (x *CreateBudgetResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ledger_v1_ledger_proto_msgTypes[7]
+	mi := &file_ledger_v1_ledger_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -508,7 +716,7 @@ func (x *CreateBudgetResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateBudgetResponse.ProtoReflect.Descriptor instead.
 func (*CreateBudgetResponse) Descriptor() ([]byte, []int) {
-	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{7}
+	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *CreateBudgetResponse) GetBudget() *Budget {
@@ -527,7 +735,7 @@ type GetBudgetsRequest struct {
 
 func (x *GetBudgetsRequest) Reset() {
 	*x = GetBudgetsRequest{}
-	mi := &file_ledger_v1_ledger_proto_msgTypes[8]
+	mi := &file_ledger_v1_ledger_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -539,7 +747,7 @@ func (x *GetBudgetsRequest) String() string {
 func (*GetBudgetsRequest) ProtoMessage() {}
 
 func (x *GetBudgetsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ledger_v1_ledger_proto_msgTypes[8]
+	mi := &file_ledger_v1_ledger_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -552,7 +760,7 @@ func (x *GetBudgetsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBudgetsRequest.ProtoReflect.Descriptor instead.
 func (*GetBudgetsRequest) Descriptor() ([]byte, []int) {
-	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{8}
+	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *GetBudgetsRequest) GetUserId() string {
@@ -571,7 +779,7 @@ type GetBudgetsResponse struct {
 
 func (x *GetBudgetsResponse) Reset() {
 	*x = GetBudgetsResponse{}
-	mi := &file_ledger_v1_ledger_proto_msgTypes[9]
+	mi := &file_ledger_v1_ledger_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -583,7 +791,7 @@ func (x *GetBudgetsResponse) String() string {
 func (*GetBudgetsResponse) ProtoMessage() {}
 
 func (x *GetBudgetsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ledger_v1_ledger_proto_msgTypes[9]
+	mi := &file_ledger_v1_ledger_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -596,7 +804,7 @@ func (x *GetBudgetsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBudgetsResponse.ProtoReflect.Descriptor instead.
 func (*GetBudgetsResponse) Descriptor() ([]byte, []int) {
-	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{9}
+	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *GetBudgetsResponse) GetBudgets() []*Budget {
@@ -620,7 +828,7 @@ type CategorySummary struct {
 
 func (x *CategorySummary) Reset() {
 	*x = CategorySummary{}
-	mi := &file_ledger_v1_ledger_proto_msgTypes[10]
+	mi := &file_ledger_v1_ledger_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -632,7 +840,7 @@ func (x *CategorySummary) String() string {
 func (*CategorySummary) ProtoMessage() {}
 
 func (x *CategorySummary) ProtoReflect() protoreflect.Message {
-	mi := &file_ledger_v1_ledger_proto_msgTypes[10]
+	mi := &file_ledger_v1_ledger_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -645,7 +853,7 @@ func (x *CategorySummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CategorySummary.ProtoReflect.Descriptor instead.
 func (*CategorySummary) Descriptor() ([]byte, []int) {
-	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{10}
+	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *CategorySummary) GetCategory() string {
@@ -703,7 +911,7 @@ type Summary struct {
 
 func (x *Summary) Reset() {
 	*x = Summary{}
-	mi := &file_ledger_v1_ledger_proto_msgTypes[11]
+	mi := &file_ledger_v1_ledger_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -715,7 +923,7 @@ func (x *Summary) String() string {
 func (*Summary) ProtoMessage() {}
 
 func (x *Summary) ProtoReflect() protoreflect.Message {
-	mi := &file_ledger_v1_ledger_proto_msgTypes[11]
+	mi := &file_ledger_v1_ledger_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -728,7 +936,7 @@ func (x *Summary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Summary.ProtoReflect.Descriptor instead.
 func (*Summary) Descriptor() ([]byte, []int) {
-	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{11}
+	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *Summary) GetUserId() string {
@@ -777,7 +985,7 @@ type GetSummaryRequest struct {
 
 func (x *GetSummaryRequest) Reset() {
 	*x = GetSummaryRequest{}
-	mi := &file_ledger_v1_ledger_proto_msgTypes[12]
+	mi := &file_ledger_v1_ledger_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -789,7 +997,7 @@ func (x *GetSummaryRequest) String() string {
 func (*GetSummaryRequest) ProtoMessage() {}
 
 func (x *GetSummaryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_ledger_v1_ledger_proto_msgTypes[12]
+	mi := &file_ledger_v1_ledger_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -802,7 +1010,7 @@ func (x *GetSummaryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSummaryRequest.ProtoReflect.Descriptor instead.
 func (*GetSummaryRequest) Descriptor() ([]byte, []int) {
-	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{12}
+	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *GetSummaryRequest) GetUserId() string {
@@ -835,7 +1043,7 @@ type GetSummaryResponse struct {
 
 func (x *GetSummaryResponse) Reset() {
 	*x = GetSummaryResponse{}
-	mi := &file_ledger_v1_ledger_proto_msgTypes[13]
+	mi := &file_ledger_v1_ledger_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -847,7 +1055,7 @@ func (x *GetSummaryResponse) String() string {
 func (*GetSummaryResponse) ProtoMessage() {}
 
 func (x *GetSummaryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_ledger_v1_ledger_proto_msgTypes[13]
+	mi := &file_ledger_v1_ledger_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -860,7 +1068,7 @@ func (x *GetSummaryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSummaryResponse.ProtoReflect.Descriptor instead.
 func (*GetSummaryResponse) Descriptor() ([]byte, []int) {
-	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{13}
+	return file_ledger_v1_ledger_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GetSummaryResponse) GetSummary() *Summary {
@@ -900,7 +1108,19 @@ const file_ledger_v1_ledger_proto_rawDesc = "" +
 	"\x04from\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
 	"\x02to\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\"U\n" +
 	"\x17GetTransactionsResponse\x12:\n" +
-	"\ftransactions\x18\x01 \x03(\v2\x16.ledger.v1.TransactionR\ftransactions\"p\n" +
+	"\ftransactions\x18\x01 \x03(\v2\x16.ledger.v1.TransactionR\ftransactions\"O\n" +
+	"\x19ImportTransactionsRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x19\n" +
+	"\bcsv_data\x18\x02 \x01(\tR\acsvData\"C\n" +
+	"\x1aImportTransactionsResponse\x12%\n" +
+	"\x0eimported_count\x18\x01 \x01(\x03R\rimportedCount\"\xac\x01\n" +
+	"\x19ExportTransactionsRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12.\n" +
+	"\x04from\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
+	"\x02to\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\x12\x1a\n" +
+	"\bcategory\x18\x04 \x01(\tR\bcategory\"7\n" +
+	"\x1aExportTransactionsResponse\x12\x19\n" +
+	"\bcsv_data\x18\x01 \x01(\tR\acsvData\"p\n" +
 	"\x06Budget\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1a\n" +
@@ -937,7 +1157,7 @@ const file_ledger_v1_ledger_proto_rawDesc = "" +
 	"\x04from\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
 	"\x02to\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\"B\n" +
 	"\x12GetSummaryResponse\x12,\n" +
-	"\asummary\x18\x01 \x01(\v2\x12.ledger.v1.SummaryR\asummary2\xb0\x03\n" +
+	"\asummary\x18\x01 \x01(\v2\x12.ledger.v1.SummaryR\asummary2\xf6\x04\n" +
 	"\rLedgerService\x12^\n" +
 	"\x11CreateTransaction\x12#.ledger.v1.CreateTransactionRequest\x1a$.ledger.v1.CreateTransactionResponse\x12X\n" +
 	"\x0fGetTransactions\x12!.ledger.v1.GetTransactionsRequest\x1a\".ledger.v1.GetTransactionsResponse\x12O\n" +
@@ -945,7 +1165,9 @@ const file_ledger_v1_ledger_proto_rawDesc = "" +
 	"\n" +
 	"GetBudgets\x12\x1c.ledger.v1.GetBudgetsRequest\x1a\x1d.ledger.v1.GetBudgetsResponse\x12I\n" +
 	"\n" +
-	"GetSummary\x12\x1c.ledger.v1.GetSummaryRequest\x1a\x1d.ledger.v1.GetSummaryResponseBTZRgithub.com/Vlad777-bit/personal-finance-analytics/shared/gen/go/ledger/v1;ledgerv1b\x06proto3"
+	"GetSummary\x12\x1c.ledger.v1.GetSummaryRequest\x1a\x1d.ledger.v1.GetSummaryResponse\x12a\n" +
+	"\x12ImportTransactions\x12$.ledger.v1.ImportTransactionsRequest\x1a%.ledger.v1.ImportTransactionsResponse\x12a\n" +
+	"\x12ExportTransactions\x12$.ledger.v1.ExportTransactionsRequest\x1a%.ledger.v1.ExportTransactionsResponseBTZRgithub.com/Vlad777-bit/personal-finance-analytics/shared/gen/go/ledger/v1;ledgerv1b\x06proto3"
 
 var (
 	file_ledger_v1_ledger_proto_rawDescOnce sync.Once
@@ -959,55 +1181,65 @@ func file_ledger_v1_ledger_proto_rawDescGZIP() []byte {
 	return file_ledger_v1_ledger_proto_rawDescData
 }
 
-var file_ledger_v1_ledger_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_ledger_v1_ledger_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_ledger_v1_ledger_proto_goTypes = []any{
-	(*Transaction)(nil),               // 0: ledger.v1.Transaction
-	(*CreateTransactionRequest)(nil),  // 1: ledger.v1.CreateTransactionRequest
-	(*CreateTransactionResponse)(nil), // 2: ledger.v1.CreateTransactionResponse
-	(*GetTransactionsRequest)(nil),    // 3: ledger.v1.GetTransactionsRequest
-	(*GetTransactionsResponse)(nil),   // 4: ledger.v1.GetTransactionsResponse
-	(*Budget)(nil),                    // 5: ledger.v1.Budget
-	(*CreateBudgetRequest)(nil),       // 6: ledger.v1.CreateBudgetRequest
-	(*CreateBudgetResponse)(nil),      // 7: ledger.v1.CreateBudgetResponse
-	(*GetBudgetsRequest)(nil),         // 8: ledger.v1.GetBudgetsRequest
-	(*GetBudgetsResponse)(nil),        // 9: ledger.v1.GetBudgetsResponse
-	(*CategorySummary)(nil),           // 10: ledger.v1.CategorySummary
-	(*Summary)(nil),                   // 11: ledger.v1.Summary
-	(*GetSummaryRequest)(nil),         // 12: ledger.v1.GetSummaryRequest
-	(*GetSummaryResponse)(nil),        // 13: ledger.v1.GetSummaryResponse
-	(*timestamppb.Timestamp)(nil),     // 14: google.protobuf.Timestamp
+	(*Transaction)(nil),                // 0: ledger.v1.Transaction
+	(*CreateTransactionRequest)(nil),   // 1: ledger.v1.CreateTransactionRequest
+	(*CreateTransactionResponse)(nil),  // 2: ledger.v1.CreateTransactionResponse
+	(*GetTransactionsRequest)(nil),     // 3: ledger.v1.GetTransactionsRequest
+	(*GetTransactionsResponse)(nil),    // 4: ledger.v1.GetTransactionsResponse
+	(*ImportTransactionsRequest)(nil),  // 5: ledger.v1.ImportTransactionsRequest
+	(*ImportTransactionsResponse)(nil), // 6: ledger.v1.ImportTransactionsResponse
+	(*ExportTransactionsRequest)(nil),  // 7: ledger.v1.ExportTransactionsRequest
+	(*ExportTransactionsResponse)(nil), // 8: ledger.v1.ExportTransactionsResponse
+	(*Budget)(nil),                     // 9: ledger.v1.Budget
+	(*CreateBudgetRequest)(nil),        // 10: ledger.v1.CreateBudgetRequest
+	(*CreateBudgetResponse)(nil),       // 11: ledger.v1.CreateBudgetResponse
+	(*GetBudgetsRequest)(nil),          // 12: ledger.v1.GetBudgetsRequest
+	(*GetBudgetsResponse)(nil),         // 13: ledger.v1.GetBudgetsResponse
+	(*CategorySummary)(nil),            // 14: ledger.v1.CategorySummary
+	(*Summary)(nil),                    // 15: ledger.v1.Summary
+	(*GetSummaryRequest)(nil),          // 16: ledger.v1.GetSummaryRequest
+	(*GetSummaryResponse)(nil),         // 17: ledger.v1.GetSummaryResponse
+	(*timestamppb.Timestamp)(nil),      // 18: google.protobuf.Timestamp
 }
 var file_ledger_v1_ledger_proto_depIdxs = []int32{
-	14, // 0: ledger.v1.Transaction.occurred_at:type_name -> google.protobuf.Timestamp
-	14, // 1: ledger.v1.Transaction.created_at:type_name -> google.protobuf.Timestamp
-	14, // 2: ledger.v1.CreateTransactionRequest.occurred_at:type_name -> google.protobuf.Timestamp
+	18, // 0: ledger.v1.Transaction.occurred_at:type_name -> google.protobuf.Timestamp
+	18, // 1: ledger.v1.Transaction.created_at:type_name -> google.protobuf.Timestamp
+	18, // 2: ledger.v1.CreateTransactionRequest.occurred_at:type_name -> google.protobuf.Timestamp
 	0,  // 3: ledger.v1.CreateTransactionResponse.transaction:type_name -> ledger.v1.Transaction
-	14, // 4: ledger.v1.GetTransactionsRequest.from:type_name -> google.protobuf.Timestamp
-	14, // 5: ledger.v1.GetTransactionsRequest.to:type_name -> google.protobuf.Timestamp
+	18, // 4: ledger.v1.GetTransactionsRequest.from:type_name -> google.protobuf.Timestamp
+	18, // 5: ledger.v1.GetTransactionsRequest.to:type_name -> google.protobuf.Timestamp
 	0,  // 6: ledger.v1.GetTransactionsResponse.transactions:type_name -> ledger.v1.Transaction
-	5,  // 7: ledger.v1.CreateBudgetResponse.budget:type_name -> ledger.v1.Budget
-	5,  // 8: ledger.v1.GetBudgetsResponse.budgets:type_name -> ledger.v1.Budget
-	14, // 9: ledger.v1.Summary.from:type_name -> google.protobuf.Timestamp
-	14, // 10: ledger.v1.Summary.to:type_name -> google.protobuf.Timestamp
-	10, // 11: ledger.v1.Summary.categories:type_name -> ledger.v1.CategorySummary
-	14, // 12: ledger.v1.GetSummaryRequest.from:type_name -> google.protobuf.Timestamp
-	14, // 13: ledger.v1.GetSummaryRequest.to:type_name -> google.protobuf.Timestamp
-	11, // 14: ledger.v1.GetSummaryResponse.summary:type_name -> ledger.v1.Summary
-	1,  // 15: ledger.v1.LedgerService.CreateTransaction:input_type -> ledger.v1.CreateTransactionRequest
-	3,  // 16: ledger.v1.LedgerService.GetTransactions:input_type -> ledger.v1.GetTransactionsRequest
-	6,  // 17: ledger.v1.LedgerService.CreateBudget:input_type -> ledger.v1.CreateBudgetRequest
-	8,  // 18: ledger.v1.LedgerService.GetBudgets:input_type -> ledger.v1.GetBudgetsRequest
-	12, // 19: ledger.v1.LedgerService.GetSummary:input_type -> ledger.v1.GetSummaryRequest
-	2,  // 20: ledger.v1.LedgerService.CreateTransaction:output_type -> ledger.v1.CreateTransactionResponse
-	4,  // 21: ledger.v1.LedgerService.GetTransactions:output_type -> ledger.v1.GetTransactionsResponse
-	7,  // 22: ledger.v1.LedgerService.CreateBudget:output_type -> ledger.v1.CreateBudgetResponse
-	9,  // 23: ledger.v1.LedgerService.GetBudgets:output_type -> ledger.v1.GetBudgetsResponse
-	13, // 24: ledger.v1.LedgerService.GetSummary:output_type -> ledger.v1.GetSummaryResponse
-	20, // [20:25] is the sub-list for method output_type
-	15, // [15:20] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	18, // 7: ledger.v1.ExportTransactionsRequest.from:type_name -> google.protobuf.Timestamp
+	18, // 8: ledger.v1.ExportTransactionsRequest.to:type_name -> google.protobuf.Timestamp
+	9,  // 9: ledger.v1.CreateBudgetResponse.budget:type_name -> ledger.v1.Budget
+	9,  // 10: ledger.v1.GetBudgetsResponse.budgets:type_name -> ledger.v1.Budget
+	18, // 11: ledger.v1.Summary.from:type_name -> google.protobuf.Timestamp
+	18, // 12: ledger.v1.Summary.to:type_name -> google.protobuf.Timestamp
+	14, // 13: ledger.v1.Summary.categories:type_name -> ledger.v1.CategorySummary
+	18, // 14: ledger.v1.GetSummaryRequest.from:type_name -> google.protobuf.Timestamp
+	18, // 15: ledger.v1.GetSummaryRequest.to:type_name -> google.protobuf.Timestamp
+	15, // 16: ledger.v1.GetSummaryResponse.summary:type_name -> ledger.v1.Summary
+	1,  // 17: ledger.v1.LedgerService.CreateTransaction:input_type -> ledger.v1.CreateTransactionRequest
+	3,  // 18: ledger.v1.LedgerService.GetTransactions:input_type -> ledger.v1.GetTransactionsRequest
+	10, // 19: ledger.v1.LedgerService.CreateBudget:input_type -> ledger.v1.CreateBudgetRequest
+	12, // 20: ledger.v1.LedgerService.GetBudgets:input_type -> ledger.v1.GetBudgetsRequest
+	16, // 21: ledger.v1.LedgerService.GetSummary:input_type -> ledger.v1.GetSummaryRequest
+	5,  // 22: ledger.v1.LedgerService.ImportTransactions:input_type -> ledger.v1.ImportTransactionsRequest
+	7,  // 23: ledger.v1.LedgerService.ExportTransactions:input_type -> ledger.v1.ExportTransactionsRequest
+	2,  // 24: ledger.v1.LedgerService.CreateTransaction:output_type -> ledger.v1.CreateTransactionResponse
+	4,  // 25: ledger.v1.LedgerService.GetTransactions:output_type -> ledger.v1.GetTransactionsResponse
+	11, // 26: ledger.v1.LedgerService.CreateBudget:output_type -> ledger.v1.CreateBudgetResponse
+	13, // 27: ledger.v1.LedgerService.GetBudgets:output_type -> ledger.v1.GetBudgetsResponse
+	17, // 28: ledger.v1.LedgerService.GetSummary:output_type -> ledger.v1.GetSummaryResponse
+	6,  // 29: ledger.v1.LedgerService.ImportTransactions:output_type -> ledger.v1.ImportTransactionsResponse
+	8,  // 30: ledger.v1.LedgerService.ExportTransactions:output_type -> ledger.v1.ExportTransactionsResponse
+	24, // [24:31] is the sub-list for method output_type
+	17, // [17:24] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_ledger_v1_ledger_proto_init() }
@@ -1021,7 +1253,7 @@ func file_ledger_v1_ledger_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ledger_v1_ledger_proto_rawDesc), len(file_ledger_v1_ledger_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

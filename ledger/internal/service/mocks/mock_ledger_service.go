@@ -140,6 +140,63 @@ func (_c *LedgerService_CreateTransaction_Call) RunAndReturn(run func(context.Co
 	return _c
 }
 
+// ExportTransactions provides a mock function with given fields: ctx, input
+func (_m *LedgerService) ExportTransactions(ctx context.Context, input service.ExportTransactionsInput) (string, error) {
+	ret := _m.Called(ctx, input)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ExportTransactions")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, service.ExportTransactionsInput) (string, error)); ok {
+		return rf(ctx, input)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, service.ExportTransactionsInput) string); ok {
+		r0 = rf(ctx, input)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, service.ExportTransactionsInput) error); ok {
+		r1 = rf(ctx, input)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// LedgerService_ExportTransactions_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ExportTransactions'
+type LedgerService_ExportTransactions_Call struct {
+	*mock.Call
+}
+
+// ExportTransactions is a helper method to define mock.On call
+//   - ctx context.Context
+//   - input service.ExportTransactionsInput
+func (_e *LedgerService_Expecter) ExportTransactions(ctx interface{}, input interface{}) *LedgerService_ExportTransactions_Call {
+	return &LedgerService_ExportTransactions_Call{Call: _e.mock.On("ExportTransactions", ctx, input)}
+}
+
+func (_c *LedgerService_ExportTransactions_Call) Run(run func(ctx context.Context, input service.ExportTransactionsInput)) *LedgerService_ExportTransactions_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(service.ExportTransactionsInput))
+	})
+	return _c
+}
+
+func (_c *LedgerService_ExportTransactions_Call) Return(_a0 string, _a1 error) *LedgerService_ExportTransactions_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *LedgerService_ExportTransactions_Call) RunAndReturn(run func(context.Context, service.ExportTransactionsInput) (string, error)) *LedgerService_ExportTransactions_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetBudgets provides a mock function with given fields: ctx, input
 func (_m *LedgerService) GetBudgets(ctx context.Context, input service.GetBudgetsInput) ([]domain.Budget, error) {
 	ret := _m.Called(ctx, input)
@@ -311,6 +368,63 @@ func (_c *LedgerService_GetTransactions_Call) Return(_a0 []domain.Transaction, _
 }
 
 func (_c *LedgerService_GetTransactions_Call) RunAndReturn(run func(context.Context, service.GetTransactionsInput) ([]domain.Transaction, error)) *LedgerService_GetTransactions_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ImportTransactions provides a mock function with given fields: ctx, input
+func (_m *LedgerService) ImportTransactions(ctx context.Context, input service.ImportTransactionsInput) (int, error) {
+	ret := _m.Called(ctx, input)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ImportTransactions")
+	}
+
+	var r0 int
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, service.ImportTransactionsInput) (int, error)); ok {
+		return rf(ctx, input)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, service.ImportTransactionsInput) int); ok {
+		r0 = rf(ctx, input)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, service.ImportTransactionsInput) error); ok {
+		r1 = rf(ctx, input)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// LedgerService_ImportTransactions_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ImportTransactions'
+type LedgerService_ImportTransactions_Call struct {
+	*mock.Call
+}
+
+// ImportTransactions is a helper method to define mock.On call
+//   - ctx context.Context
+//   - input service.ImportTransactionsInput
+func (_e *LedgerService_Expecter) ImportTransactions(ctx interface{}, input interface{}) *LedgerService_ImportTransactions_Call {
+	return &LedgerService_ImportTransactions_Call{Call: _e.mock.On("ImportTransactions", ctx, input)}
+}
+
+func (_c *LedgerService_ImportTransactions_Call) Run(run func(ctx context.Context, input service.ImportTransactionsInput)) *LedgerService_ImportTransactions_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(service.ImportTransactionsInput))
+	})
+	return _c
+}
+
+func (_c *LedgerService_ImportTransactions_Call) Return(_a0 int, _a1 error) *LedgerService_ImportTransactions_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *LedgerService_ImportTransactions_Call) RunAndReturn(run func(context.Context, service.ImportTransactionsInput) (int, error)) *LedgerService_ImportTransactions_Call {
 	_c.Call.Return(run)
 	return _c
 }

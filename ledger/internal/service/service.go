@@ -37,6 +37,16 @@ type LedgerService interface {
 		ctx context.Context,
 		input GetSummaryInput,
 	) (domain.Summary, error)
+
+	ImportTransactions(
+		ctx context.Context,
+		input ImportTransactionsInput,
+	) (int, error)
+
+	ExportTransactions(
+		ctx context.Context,
+		input ExportTransactionsInput,
+	) (string, error)
 }
 
 type CreateTransactionInput struct {
@@ -68,6 +78,18 @@ type GetSummaryInput struct {
 	UserID string
 	From   time.Time
 	To     time.Time
+}
+
+type ImportTransactionsInput struct {
+	UserID  string
+	CSVData string
+}
+
+type ExportTransactionsInput struct {
+	UserID   string
+	Category string
+	From     time.Time
+	To       time.Time
 }
 
 type service struct {

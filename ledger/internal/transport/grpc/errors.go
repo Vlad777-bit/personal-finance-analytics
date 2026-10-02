@@ -33,7 +33,8 @@ func mapServiceError(err error) error {
 		errors.Is(err, domain.ErrInvalidAmount),
 		errors.Is(err, domain.ErrInvalidBudget),
 		errors.Is(err, domain.ErrDateRequired),
-		errors.Is(err, domain.ErrInvalidPeriod):
+		errors.Is(err, domain.ErrInvalidPeriod),
+		errors.Is(err, domain.ErrInvalidCSV):
 		return status.Error(codes.InvalidArgument, err.Error())
 	case errors.Is(err, domain.ErrBudgetNotFound):
 		return status.Error(codes.NotFound, err.Error())

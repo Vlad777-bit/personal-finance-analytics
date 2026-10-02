@@ -182,6 +182,36 @@ func TestLedgerGRPC(t *testing.T) {
 		require.False(t, category.GetBudgetExceeded())
 	})
 
+	t.Run("import transactions from CSV", func(t *testing.T) {
+		response, callErr := client.ImportTransactions(
+			rpcContext,
+			&ledgerv1.ImportTransactionsRequest{
+				UserId: testGRPCUserID,
+				CsvData: "amount,category,description,occurred_at\n" +
+					"500," + testGRPCCategory + ",imported transaction," +
+					occurredAt.Add(30*time.Minute).Format(time.RFC3339) + "\n",
+			},
+		)
+		require.NoError(t, callErr)
+		require.Equal(t, int64(1), response.GetImportedCount())
+	})
+
+	t.Run("export transactions to CSV", func(t *testing.T) {
+		response, callErr := client.ExportTransactions(
+			rpcContext,
+			&ledgerv1.ExportTransactionsRequest{
+				UserId:   testGRPCUserID,
+				Category: testGRPCCategory,
+				From:     timestamppb.New(occurredAt.Add(-time.Hour)),
+				To:       timestamppb.New(occurredAt.Add(time.Hour)),
+			},
+		)
+		require.NoError(t, callErr)
+		require.Contains(t, response.GetCsvData(), "amount,category,description,occurred_at")
+		require.Contains(t, response.GetCsvData(), "2000,"+testGRPCCategory+",integration transaction")
+		require.Contains(t, response.GetCsvData(), "500,"+testGRPCCategory+",imported transaction")
+	})
+
 	t.Run("budget exceeded", func(t *testing.T) {
 		_, callErr := client.CreateTransaction(
 			rpcContext,

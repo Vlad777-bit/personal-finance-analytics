@@ -10,6 +10,7 @@ COPY auth/go.mod auth/go.sum ./auth/
 COPY gateway/go.mod gateway/go.sum ./gateway/
 COPY ledger/go.mod ledger/go.sum ./ledger/
 COPY shared/go.mod shared/go.sum ./shared/
+COPY integration/go.mod integration/go.sum ./integration/
 
 RUN go mod download
 

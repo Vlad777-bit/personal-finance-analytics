@@ -12,6 +12,8 @@ service LedgerService {
   rpc CreateBudget(CreateBudgetRequest) returns (CreateBudgetResponse);
   rpc GetBudgets(GetBudgetsRequest) returns (GetBudgetsResponse);
   rpc GetSummary(GetSummaryRequest) returns (GetSummaryResponse);
+  rpc ImportTransactions(ImportTransactionsRequest) returns (ImportTransactionsResponse);
+  rpc ExportTransactions(ExportTransactionsRequest) returns (ExportTransactionsResponse);
 }
 
 message Transaction {
@@ -45,6 +47,26 @@ message GetTransactionsRequest {
 
 message GetTransactionsResponse {
   repeated Transaction transactions = 1;
+}
+
+message ImportTransactionsRequest {
+  string user_id = 1;
+  string csv_data = 2;
+}
+
+message ImportTransactionsResponse {
+  int64 imported_count = 1;
+}
+
+message ExportTransactionsRequest {
+  string user_id = 1;
+  google.protobuf.Timestamp from = 2;
+  google.protobuf.Timestamp to = 3;
+  string category = 4;
+}
+
+message ExportTransactionsResponse {
+  string csv_data = 1;
 }
 
 message Budget {

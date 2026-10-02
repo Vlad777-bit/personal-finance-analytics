@@ -8,12 +8,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -176,6 +178,8 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 	)
 	assertTransactionList(t, authenticatedClient, baseURL, authenticatedUserID)
 	assertSummary(t, authenticatedClient, baseURL, authenticatedUserID)
+	assertCSVImport(t, authenticatedClient, baseURL, authenticatedUserID)
+	assertCSVExport(t, authenticatedClient, baseURL)
 	assertStatus(
 		t,
 		authenticatedClient,
@@ -195,6 +199,79 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		[]byte("{"),
 		http.StatusBadRequest,
 	)
+}
+
+func assertCSVImport(t *testing.T, client *http.Client, baseURL, userID string) {
+	t.Helper()
+
+	request, err := http.NewRequestWithContext(
+		context.Background(),
+		http.MethodPost,
+		baseURL+"/transactions/import",
+		strings.NewReader("amount,category,description,occurred_at\n500,"+testCategory+",imported,2026-09-30T12:30:00Z\n"),
+	)
+	if err != nil {
+		t.Fatalf("create CSV import request: %v", err)
+	}
+	request.Header.Set("Content-Type", "text/csv")
+
+	response, err := client.Do(request)
+	if err != nil {
+		t.Fatalf("import CSV: %v", err)
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("expected CSV import status %d, got %d", http.StatusOK, response.StatusCode)
+	}
+
+	var result struct {
+		ImportedCount int `json:"imported_count"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+		t.Fatalf("decode CSV import response: %v", err)
+	}
+	if result.ImportedCount != 1 {
+		t.Fatalf("expected one imported transaction for %s, got %d", userID, result.ImportedCount)
+	}
+}
+
+func assertCSVExport(t *testing.T, client *http.Client, baseURL string) {
+	t.Helper()
+
+	query := url.Values{
+		"category": {testCategory},
+		"from":     {"2026-09-01T00:00:00Z"},
+		"to":       {"2026-10-01T00:00:00Z"},
+	}
+	request, err := http.NewRequestWithContext(
+		context.Background(),
+		http.MethodGet,
+		baseURL+"/transactions/export?"+query.Encode(),
+		http.NoBody,
+	)
+	if err != nil {
+		t.Fatalf("create CSV export request: %v", err)
+	}
+
+	response, err := client.Do(request)
+	if err != nil {
+		t.Fatalf("export CSV: %v", err)
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("expected CSV export status %d, got %d", http.StatusOK, response.StatusCode)
+	}
+	if got := response.Header.Get("Content-Type"); got != "text/csv; charset=utf-8" {
+		t.Fatalf("unexpected CSV content type: %q", got)
+	}
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		t.Fatalf("read CSV export response: %v", err)
+	}
+	if !strings.Contains(string(body), "500,"+testCategory+",imported") {
+		t.Fatalf("exported CSV does not contain imported transaction: %q", body)
+	}
 }
 
 func assertLogin(t *testing.T, client *http.Client, baseURL string) (string, string) {

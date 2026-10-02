@@ -32,6 +32,18 @@ type GetTransactionsInput struct {
 	To       time.Time
 }
 
+type ImportTransactionsInput struct {
+	UserID  string
+	CSVData string
+}
+
+type ExportTransactionsInput struct {
+	UserID   string
+	Category string
+	From     time.Time
+	To       time.Time
+}
+
 type CreateBudgetInput struct {
 	UserID   string
 	Category string

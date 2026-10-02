@@ -19,11 +19,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	LedgerService_CreateTransaction_FullMethodName = "/ledger.v1.LedgerService/CreateTransaction"
-	LedgerService_GetTransactions_FullMethodName   = "/ledger.v1.LedgerService/GetTransactions"
-	LedgerService_CreateBudget_FullMethodName      = "/ledger.v1.LedgerService/CreateBudget"
-	LedgerService_GetBudgets_FullMethodName        = "/ledger.v1.LedgerService/GetBudgets"
-	LedgerService_GetSummary_FullMethodName        = "/ledger.v1.LedgerService/GetSummary"
+	LedgerService_CreateTransaction_FullMethodName  = "/ledger.v1.LedgerService/CreateTransaction"
+	LedgerService_GetTransactions_FullMethodName    = "/ledger.v1.LedgerService/GetTransactions"
+	LedgerService_CreateBudget_FullMethodName       = "/ledger.v1.LedgerService/CreateBudget"
+	LedgerService_GetBudgets_FullMethodName         = "/ledger.v1.LedgerService/GetBudgets"
+	LedgerService_GetSummary_FullMethodName         = "/ledger.v1.LedgerService/GetSummary"
+	LedgerService_ImportTransactions_FullMethodName = "/ledger.v1.LedgerService/ImportTransactions"
+	LedgerService_ExportTransactions_FullMethodName = "/ledger.v1.LedgerService/ExportTransactions"
 )
 
 // LedgerServiceClient is the client API for LedgerService service.
@@ -35,6 +37,8 @@ type LedgerServiceClient interface {
 	CreateBudget(ctx context.Context, in *CreateBudgetRequest, opts ...grpc.CallOption) (*CreateBudgetResponse, error)
 	GetBudgets(ctx context.Context, in *GetBudgetsRequest, opts ...grpc.CallOption) (*GetBudgetsResponse, error)
 	GetSummary(ctx context.Context, in *GetSummaryRequest, opts ...grpc.CallOption) (*GetSummaryResponse, error)
+	ImportTransactions(ctx context.Context, in *ImportTransactionsRequest, opts ...grpc.CallOption) (*ImportTransactionsResponse, error)
+	ExportTransactions(ctx context.Context, in *ExportTransactionsRequest, opts ...grpc.CallOption) (*ExportTransactionsResponse, error)
 }
 
 type ledgerServiceClient struct {
@@ -95,6 +99,26 @@ func (c *ledgerServiceClient) GetSummary(ctx context.Context, in *GetSummaryRequ
 	return out, nil
 }
 
+func (c *ledgerServiceClient) ImportTransactions(ctx context.Context, in *ImportTransactionsRequest, opts ...grpc.CallOption) (*ImportTransactionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ImportTransactionsResponse)
+	err := c.cc.Invoke(ctx, LedgerService_ImportTransactions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ledgerServiceClient) ExportTransactions(ctx context.Context, in *ExportTransactionsRequest, opts ...grpc.CallOption) (*ExportTransactionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ExportTransactionsResponse)
+	err := c.cc.Invoke(ctx, LedgerService_ExportTransactions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LedgerServiceServer is the server API for LedgerService service.
 // All implementations must embed UnimplementedLedgerServiceServer
 // for forward compatibility.
@@ -104,6 +128,8 @@ type LedgerServiceServer interface {
 	CreateBudget(context.Context, *CreateBudgetRequest) (*CreateBudgetResponse, error)
 	GetBudgets(context.Context, *GetBudgetsRequest) (*GetBudgetsResponse, error)
 	GetSummary(context.Context, *GetSummaryRequest) (*GetSummaryResponse, error)
+	ImportTransactions(context.Context, *ImportTransactionsRequest) (*ImportTransactionsResponse, error)
+	ExportTransactions(context.Context, *ExportTransactionsRequest) (*ExportTransactionsResponse, error)
 	mustEmbedUnimplementedLedgerServiceServer()
 }
 
@@ -128,6 +154,12 @@ func (UnimplementedLedgerServiceServer) GetBudgets(context.Context, *GetBudgetsR
 }
 func (UnimplementedLedgerServiceServer) GetSummary(context.Context, *GetSummaryRequest) (*GetSummaryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSummary not implemented")
+}
+func (UnimplementedLedgerServiceServer) ImportTransactions(context.Context, *ImportTransactionsRequest) (*ImportTransactionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ImportTransactions not implemented")
+}
+func (UnimplementedLedgerServiceServer) ExportTransactions(context.Context, *ExportTransactionsRequest) (*ExportTransactionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExportTransactions not implemented")
 }
 func (UnimplementedLedgerServiceServer) mustEmbedUnimplementedLedgerServiceServer() {}
 func (UnimplementedLedgerServiceServer) testEmbeddedByValue()                       {}
@@ -240,6 +272,42 @@ func _LedgerService_GetSummary_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LedgerService_ImportTransactions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImportTransactionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LedgerServiceServer).ImportTransactions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LedgerService_ImportTransactions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LedgerServiceServer).ImportTransactions(ctx, req.(*ImportTransactionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LedgerService_ExportTransactions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExportTransactionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LedgerServiceServer).ExportTransactions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LedgerService_ExportTransactions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LedgerServiceServer).ExportTransactions(ctx, req.(*ExportTransactionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LedgerService_ServiceDesc is the grpc.ServiceDesc for LedgerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -266,6 +334,14 @@ var LedgerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSummary",
 			Handler:    _LedgerService_GetSummary_Handler,
+		},
+		{
+			MethodName: "ImportTransactions",
+			Handler:    _LedgerService_ImportTransactions_Handler,
+		},
+		{
+			MethodName: "ExportTransactions",
+			Handler:    _LedgerService_ExportTransactions_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

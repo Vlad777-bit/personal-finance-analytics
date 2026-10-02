@@ -62,6 +62,7 @@ func New(
 	authHandler := authtransport.NewHandler(authClient)
 	budgetHandler := budgettransport.NewHandler(ledgerClient)
 	transactionHandler := transactiontransport.NewHandler(ledgerClient)
+	csvHandler := transactiontransport.NewCSVHandler(ledgerClient)
 	reportHandler := reporttransport.NewHandler(ledgerClient)
 
 	router := httptransport.NewRouter()
@@ -73,6 +74,8 @@ func New(
 	router.Handle("GET /budgets", authenticate(http.HandlerFunc(budgetHandler.GetBudgets)))
 	router.Handle("POST /transactions", authenticate(http.HandlerFunc(transactionHandler.Create)))
 	router.Handle("GET /transactions", authenticate(http.HandlerFunc(transactionHandler.GetTransactions)))
+	router.Handle("POST /transactions/import", authenticate(http.HandlerFunc(csvHandler.Import)))
+	router.Handle("GET /transactions/export", authenticate(http.HandlerFunc(csvHandler.Export)))
 	router.Handle("GET /reports/summary", authenticate(http.HandlerFunc(reportHandler.GetSummary)))
 
 	return &App{
