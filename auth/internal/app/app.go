@@ -55,6 +55,10 @@ func New(
 		databaseClient,
 	)
 	refreshSessionRepository := refreshsessionrepository.New(databaseClient)
+	if err := refreshSessionRepository.DeleteExpired(ctx); err != nil {
+		databaseClient.Close()
+		return nil, fmt.Errorf("clean expired refresh sessions: %w", err)
+	}
 
 	authService := service.New(
 		userRepository,

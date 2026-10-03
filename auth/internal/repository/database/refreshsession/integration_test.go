@@ -41,4 +41,13 @@ func TestRefreshSessionRepository(t *testing.T) {
 	}))
 	require.NoError(t, repository.Consume(context.Background(), tokenHash))
 	require.ErrorIs(t, repository.Consume(context.Background(), tokenHash), domain.ErrRefreshSessionNotFound)
+	require.NoError(t, repository.Create(context.Background(), domain.RefreshSession{
+		TokenHash: tokenHash + "-expired",
+		UserID:    userID.String(),
+		ExpiresAt: time.Now().Add(time.Hour),
+	}))
+	_, err = database.Exec(context.Background(), "UPDATE refresh_sessions SET expires_at = NOW() - INTERVAL '1 hour' WHERE token_hash = $1", tokenHash+"-expired")
+	require.NoError(t, err)
+	require.NoError(t, repository.DeleteExpired(context.Background()))
+	require.ErrorIs(t, repository.Consume(context.Background(), tokenHash+"-expired"), domain.ErrRefreshSessionNotFound)
 }
