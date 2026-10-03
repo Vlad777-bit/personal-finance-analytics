@@ -226,12 +226,20 @@ func assertCSVImport(t *testing.T, client *http.Client, baseURL, userID string) 
 
 	var result struct {
 		ImportedCount int `json:"imported_count"`
+		FailedCount   int `json:"failed_count"`
+		Errors        []struct {
+			Row     int64  `json:"row"`
+			Message string `json:"message"`
+		} `json:"errors"`
 	}
 	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
 		t.Fatalf("decode CSV import response: %v", err)
 	}
 	if result.ImportedCount != 1 {
 		t.Fatalf("expected one imported transaction for %s, got %d", userID, result.ImportedCount)
+	}
+	if result.FailedCount != 0 || len(result.Errors) != 0 {
+		t.Fatalf("expected no CSV import errors, got failed=%d errors=%v", result.FailedCount, result.Errors)
 	}
 }
 

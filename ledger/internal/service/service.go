@@ -41,7 +41,7 @@ type LedgerService interface {
 	ImportTransactions(
 		ctx context.Context,
 		input ImportTransactionsInput,
-	) (int, error)
+	) (ImportTransactionsResult, error)
 
 	ExportTransactions(
 		ctx context.Context,
@@ -83,6 +83,17 @@ type GetSummaryInput struct {
 type ImportTransactionsInput struct {
 	UserID  string
 	CSVData string
+}
+
+type ImportTransactionsResult struct {
+	ImportedCount int
+	FailedCount   int
+	Errors        []ImportTransactionsError
+}
+
+type ImportTransactionsError struct {
+	Row     int
+	Message string
 }
 
 type ExportTransactionsInput struct {

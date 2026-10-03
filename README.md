@@ -250,6 +250,7 @@ curl 'http://localhost:8080/api/transactions/export?from=2026-10-01T00:00:00Z&to
 ```
 
 `user_id` отсутствует в CSV и определяется по JWT. Максимальный размер HTTP import — 10 MiB.
+Ответ импорта содержит `imported_count`, `failed_count` и массив `errors` с номерами строк и причинами ошибок. Ошибочная строка не останавливает обработку остальных строк.
 
 ## Миграции
 
@@ -457,7 +458,7 @@ curl -X POST http://localhost:8080/api/transactions/import \
   --data-binary @transactions.csv
 ```
 
-Ожидаемый ответ содержит `imported_count: 1`.
+Ожидаемый ответ содержит `imported_count: 1`, `failed_count: 0` и пустой массив `errors`.
 
 Экспортируйте период:
 

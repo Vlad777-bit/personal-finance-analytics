@@ -21,7 +21,7 @@ func TestClient_ImportTransactions(t *testing.T) {
 			require.Equal(t, "user-1", request.GetUserId())
 			require.Equal(t, "csv", request.GetCsvData())
 
-			return &ledgerv1.ImportTransactionsResponse{ImportedCount: 3}, nil
+			return &ledgerv1.ImportTransactionsResponse{ImportedCount: 3, FailedCount: 1}, nil
 		},
 	}}
 
@@ -29,7 +29,8 @@ func TestClient_ImportTransactions(t *testing.T) {
 		UserID: "user-1", CSVData: "csv",
 	})
 	require.NoError(t, err)
-	require.Equal(t, 3, got)
+	require.Equal(t, 3, got.ImportedCount)
+	require.Equal(t, 1, got.FailedCount)
 }
 
 func TestClient_ExportTransactions(t *testing.T) {

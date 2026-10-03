@@ -18,7 +18,7 @@ type CSVClient interface {
 	ImportTransactions(
 		ctx context.Context,
 		input ledgerclient.ImportTransactionsInput,
-	) (int, error)
+	) (ledgerclient.ImportTransactionsResult, error)
 
 	ExportTransactions(
 		ctx context.Context,
@@ -49,7 +49,7 @@ func (h *csvHandler) Import(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	importedCount, err := h.client.ImportTransactions(
+	result, err := h.client.ImportTransactions(
 		r.Context(),
 		ledgerclient.ImportTransactionsInput{
 			UserID:  identity.UserID,
@@ -62,7 +62,29 @@ func (h *csvHandler) Import(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httptransport.WriteJSON(w, http.StatusOK, map[string]int{"imported_count": importedCount})
+	errors := make([]importErrorResponse, 0, len(result.Errors))
+	for _, importError := range result.Errors {
+		errors = append(errors, importErrorResponse{
+			Row:     int64(importError.Row),
+			Message: importError.Message,
+		})
+	}
+	httptransport.WriteJSON(w, http.StatusOK, importResponse{
+		ImportedCount: result.ImportedCount,
+		FailedCount:   result.FailedCount,
+		Errors:        errors,
+	})
+}
+
+type importResponse struct {
+	ImportedCount int                   `json:"imported_count"`
+	FailedCount   int                   `json:"failed_count"`
+	Errors        []importErrorResponse `json:"errors"`
+}
+
+type importErrorResponse struct {
+	Row     int64  `json:"row"`
+	Message string `json:"message"`
 }
 
 func (h *csvHandler) Export(w http.ResponseWriter, r *http.Request) {

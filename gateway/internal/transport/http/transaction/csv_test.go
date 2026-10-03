@@ -15,14 +15,14 @@ import (
 )
 
 type fakeCSVClient struct {
-	importTransactions func(context.Context, ledgerclient.ImportTransactionsInput) (int, error)
+	importTransactions func(context.Context, ledgerclient.ImportTransactionsInput) (ledgerclient.ImportTransactionsResult, error)
 	exportTransactions func(context.Context, ledgerclient.ExportTransactionsInput) (string, error)
 }
 
 func (f *fakeCSVClient) ImportTransactions(
 	ctx context.Context,
 	input ledgerclient.ImportTransactionsInput,
-) (int, error) {
+) (ledgerclient.ImportTransactionsResult, error) {
 	return f.importTransactions(ctx, input)
 }
 
@@ -40,11 +40,11 @@ func TestHandler_ImportCSV(t *testing.T) {
 		importTransactions: func(
 			_ context.Context,
 			input ledgerclient.ImportTransactionsInput,
-		) (int, error) {
+		) (ledgerclient.ImportTransactionsResult, error) {
 			require.Equal(t, "user-1", input.UserID)
 			require.Equal(t, "amount,category,description,occurred_at\n", input.CSVData)
 
-			return 2, nil
+			return ledgerclient.ImportTransactionsResult{ImportedCount: 2}, nil
 		},
 	}
 	handler := transactiontransport.NewCSVHandler(client)
@@ -54,7 +54,7 @@ func TestHandler_ImportCSV(t *testing.T) {
 	handler.Import(recorder, request)
 
 	require.Equal(t, http.StatusOK, recorder.Code)
-	require.JSONEq(t, `{"imported_count":2}`, recorder.Body.String())
+	require.JSONEq(t, `{"imported_count":2,"failed_count":0,"errors":[]}`, recorder.Body.String())
 }
 
 func TestHandler_ExportCSV(t *testing.T) {

@@ -56,6 +56,13 @@ message ImportTransactionsRequest {
 
 message ImportTransactionsResponse {
   int64 imported_count = 1;
+  int64 failed_count = 2;
+  repeated ImportTransactionError errors = 3;
+}
+
+message ImportTransactionError {
+  int64 row = 1;
+  string message = 2;
 }
 
 message ExportTransactionsRequest {

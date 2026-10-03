@@ -485,12 +485,30 @@ components:
           format: date-time
     ImportTransactionsResponse:
       type: object
-      required: [imported_count]
+      required: [imported_count, failed_count, errors]
       properties:
         imported_count:
           type: integer
           format: int64
           minimum: 0
+        failed_count:
+          type: integer
+          format: int64
+          minimum: 0
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportTransactionError'
+    ImportTransactionError:
+      type: object
+      required: [row, message]
+      properties:
+        row:
+          type: integer
+          format: int64
+          minimum: 2
+        message:
+          type: string
     Summary:
       type: object
       required: [user_id, from, to, total_spent, categories]

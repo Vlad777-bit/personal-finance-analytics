@@ -30,6 +30,7 @@ func TestService_ImportTransactions(t *testing.T) {
 		input   service.ImportTransactionsInput
 		prepare func(*repositorymocks.TransactionRepository)
 		want    int
+		failed  int
 		wantErr error
 	}{
 		{
@@ -64,7 +65,7 @@ func TestService_ImportTransactions(t *testing.T) {
 			name:    "rejects invalid amount",
 			input:   service.ImportTransactionsInput{UserID: "user-1", CSVData: "amount,category,description,occurred_at\ninvalid,food,lunch," + date.Format(time.RFC3339) + "\n"},
 			prepare: func(*repositorymocks.TransactionRepository) {},
-			wantErr: domain.ErrInvalidCSV,
+			failed:  1,
 		},
 		{
 			name:  "wraps repository error",
@@ -72,7 +73,7 @@ func TestService_ImportTransactions(t *testing.T) {
 			prepare: func(repo *repositorymocks.TransactionRepository) {
 				repo.EXPECT().CreateWithinBudget(mock.Anything, mock.Anything).Return(domain.Transaction{}, errCSVRepository)
 			},
-			wantErr: errCSVRepository,
+			failed: 1,
 		},
 	}
 
@@ -89,7 +90,8 @@ func TestService_ImportTransactions(t *testing.T) {
 			)
 
 			got, err := ledgerService.ImportTransactions(t.Context(), tt.input)
-			require.Equal(t, tt.want, got)
+			require.Equal(t, tt.want, got.ImportedCount)
+			require.Equal(t, tt.failed, got.FailedCount)
 			if tt.wantErr != nil {
 				require.ErrorIs(t, err, tt.wantErr)
 
@@ -128,6 +130,30 @@ func TestService_ExportTransactions(t *testing.T) {
 		"amount,category,description,occurred_at\n1500,food,lunch,2026-10-01T12:00:00Z\n",
 		got,
 	)
+}
+
+func TestService_ImportTransactions_ReturnsRowErrors(t *testing.T) {
+	t.Parallel()
+
+	repo := repositorymocks.NewTransactionRepository(t)
+	repo.EXPECT().CreateWithinBudget(mock.Anything, mock.Anything).Return(domain.Transaction{}, nil)
+	ledgerService := newTestLedgerService(
+		repo,
+		repositorymocks.NewBudgetRepository(t),
+		repositorymocks.NewReportRepository(t),
+	)
+
+	result, err := ledgerService.ImportTransactions(t.Context(), service.ImportTransactionsInput{
+		UserID: "user-1",
+		CSVData: "amount,category,description,occurred_at\n" +
+			"100,food,valid,2026-10-01T00:00:00Z\n" +
+			"invalid,food,bad,2026-10-01T00:00:00Z\n" +
+			"200,food,valid again,2026-10-01T00:00:00Z\n",
+	})
+	require.NoError(t, err)
+	require.Equal(t, 2, result.ImportedCount)
+	require.Equal(t, 1, result.FailedCount)
+	require.Equal(t, service.ImportTransactionsError{Row: 3, Message: "parse amount: strconv.ParseInt: parsing \"invalid\": invalid syntax"}, result.Errors[0])
 }
 
 func TestService_ImportTransactions_ContextCancellation(t *testing.T) {

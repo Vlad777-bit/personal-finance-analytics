@@ -373,22 +373,22 @@ func (_c *LedgerService_GetTransactions_Call) RunAndReturn(run func(context.Cont
 }
 
 // ImportTransactions provides a mock function with given fields: ctx, input
-func (_m *LedgerService) ImportTransactions(ctx context.Context, input service.ImportTransactionsInput) (int, error) {
+func (_m *LedgerService) ImportTransactions(ctx context.Context, input service.ImportTransactionsInput) (service.ImportTransactionsResult, error) {
 	ret := _m.Called(ctx, input)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ImportTransactions")
 	}
 
-	var r0 int
+	var r0 service.ImportTransactionsResult
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.ImportTransactionsInput) (int, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.ImportTransactionsInput) (service.ImportTransactionsResult, error)); ok {
 		return rf(ctx, input)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.ImportTransactionsInput) int); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.ImportTransactionsInput) service.ImportTransactionsResult); ok {
 		r0 = rf(ctx, input)
 	} else {
-		r0 = ret.Get(0).(int)
+		r0 = ret.Get(0).(service.ImportTransactionsResult)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, service.ImportTransactionsInput) error); ok {
@@ -419,12 +419,12 @@ func (_c *LedgerService_ImportTransactions_Call) Run(run func(ctx context.Contex
 	return _c
 }
 
-func (_c *LedgerService_ImportTransactions_Call) Return(_a0 int, _a1 error) *LedgerService_ImportTransactions_Call {
+func (_c *LedgerService_ImportTransactions_Call) Return(_a0 service.ImportTransactionsResult, _a1 error) *LedgerService_ImportTransactions_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *LedgerService_ImportTransactions_Call) RunAndReturn(run func(context.Context, service.ImportTransactionsInput) (int, error)) *LedgerService_ImportTransactions_Call {
+func (_c *LedgerService_ImportTransactions_Call) RunAndReturn(run func(context.Context, service.ImportTransactionsInput) (service.ImportTransactionsResult, error)) *LedgerService_ImportTransactions_Call {
 	_c.Call.Return(run)
 	return _c
 }

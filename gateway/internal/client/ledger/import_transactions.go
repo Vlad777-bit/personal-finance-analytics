@@ -9,7 +9,8 @@ import (
 func (c *Client) ImportTransactions(
 	ctx context.Context,
 	input ImportTransactionsInput,
-) (int, error) {
+) (ImportTransactionsResult, error) {
+	result := ImportTransactionsResult{}
 	response, err := c.service.ImportTransactions(
 		ctx,
 		&ledgerv1.ImportTransactionsRequest{
@@ -18,11 +19,20 @@ func (c *Client) ImportTransactions(
 		},
 	)
 	if err != nil {
-		return 0, mapError(err)
+		return result, mapError(err)
 	}
 	if response == nil {
-		return 0, ErrInvalidResponse
+		return result, ErrInvalidResponse
 	}
 
-	return int(response.GetImportedCount()), nil
+	result.ImportedCount = int(response.GetImportedCount())
+	result.FailedCount = int(response.GetFailedCount())
+	for _, importError := range response.GetErrors() {
+		result.Errors = append(result.Errors, ImportTransactionsError{
+			Row:     importError.GetRow(),
+			Message: importError.GetMessage(),
+		})
+	}
+
+	return result, nil
 }

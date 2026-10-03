@@ -37,6 +37,17 @@ type ImportTransactionsInput struct {
 	CSVData string
 }
 
+type ImportTransactionsResult struct {
+	ImportedCount int
+	FailedCount   int
+	Errors        []ImportTransactionsError
+}
+
+type ImportTransactionsError struct {
+	Row     int64
+	Message string
+}
+
 type ExportTransactionsInput struct {
 	UserID   string
 	Category string
