@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 
@@ -44,6 +45,13 @@ func (s *service) Login(
 	if err != nil {
 		return LoginResult{}, fmt.Errorf("issue refresh token: %w", err)
 	}
+	if err := s.refreshSessions.Create(ctx, domain.RefreshSession{
+		TokenHash: refreshTokenHash(refreshToken.Value),
+		UserID:    user.ID,
+		ExpiresAt: refreshToken.ExpiresAt,
+	}); err != nil {
+		return LoginResult{}, fmt.Errorf("store refresh session: %w", err)
+	}
 
 	return LoginResult{
 		UserID:       user.ID,
@@ -51,4 +59,9 @@ func (s *service) Login(
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil
+}
+
+func refreshTokenHash(value string) string {
+	hash := sha256.Sum256([]byte(value))
+	return fmt.Sprintf("%x", hash[:])
 }

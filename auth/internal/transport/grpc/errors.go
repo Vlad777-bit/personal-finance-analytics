@@ -32,6 +32,8 @@ func mapServiceError(err error) error {
 		return status.Error(codes.Unauthenticated, err.Error())
 	case errors.Is(err, domain.ErrInvalidRefreshToken):
 		return status.Error(codes.Unauthenticated, err.Error())
+	case errors.Is(err, domain.ErrRefreshSessionNotFound):
+		return status.Error(codes.Unauthenticated, domain.ErrInvalidRefreshToken.Error())
 	default:
 		return status.Error(codes.Internal, "internal error")
 	}

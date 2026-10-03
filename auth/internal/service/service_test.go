@@ -19,9 +19,10 @@ type fakePasswordHasher struct {
 }
 
 type fakeTokenIssuer struct {
-	issue        func(context.Context, domain.User) (service.AccessToken, error)
-	issueRefresh func(context.Context, domain.User) (service.RefreshToken, error)
-	refresh      func(context.Context, string) (service.AccessToken, error)
+	issue         func(context.Context, domain.User) (service.AccessToken, error)
+	issueRefresh  func(context.Context, domain.User) (service.RefreshToken, error)
+	refresh       func(context.Context, string) (service.AccessToken, error)
+	refreshTokens func(context.Context, string) (service.TokenPair, error)
 }
 
 func (f *fakeTokenIssuer) IssueRefresh(ctx context.Context, user domain.User) (service.RefreshToken, error) {
@@ -36,6 +37,32 @@ func (f *fakeTokenIssuer) Refresh(ctx context.Context, token string) (service.Ac
 		return service.AccessToken{Value: "access-token"}, nil
 	}
 	return f.refresh(ctx, token)
+}
+
+func (f *fakeTokenIssuer) RefreshTokens(ctx context.Context, token string) (service.TokenPair, error) {
+	if f.refreshTokens == nil {
+		return service.TokenPair{UserID: "user-1", AccessToken: service.AccessToken{Value: "access-token"}, RefreshToken: service.RefreshToken{Value: "refresh-token"}}, nil
+	}
+	return f.refreshTokens(ctx, token)
+}
+
+type fakeRefreshSessionRepository struct {
+	create  func(context.Context, domain.RefreshSession) error
+	consume func(context.Context, string) error
+}
+
+func (f *fakeRefreshSessionRepository) Create(ctx context.Context, session domain.RefreshSession) error {
+	if f.create == nil {
+		return nil
+	}
+	return f.create(ctx, session)
+}
+
+func (f *fakeRefreshSessionRepository) Consume(ctx context.Context, tokenHash string) error {
+	if f.consume == nil {
+		return nil
+	}
+	return f.consume(ctx, tokenHash)
 }
 
 func (f *fakeTokenIssuer) Issue(
@@ -141,7 +168,7 @@ func TestService_Register(t *testing.T) {
 
 			userRepository := repositorymocks.NewUserRepository(t)
 			tt.prepare(userRepository)
-			authService := service.New(userRepository, tt.hasher, &fakeTokenIssuer{})
+			authService := service.New(userRepository, tt.hasher, &fakeTokenIssuer{}, &fakeRefreshSessionRepository{})
 
 			got, err := authService.Register(t.Context(), tt.input)
 			require.ErrorIs(t, err, tt.wantErr)
@@ -259,7 +286,7 @@ func TestService_Login(t *testing.T) {
 
 			userRepository := repositorymocks.NewUserRepository(t)
 			tt.prepare(userRepository)
-			authService := service.New(userRepository, tt.hasher, tt.issuer)
+			authService := service.New(userRepository, tt.hasher, tt.issuer, &fakeRefreshSessionRepository{})
 
 			got, err := authService.Login(t.Context(), tt.input)
 			require.ErrorIs(t, err, tt.wantErr)
@@ -270,11 +297,11 @@ func TestService_Login(t *testing.T) {
 
 func TestService_Refresh(t *testing.T) {
 	t.Parallel()
-	issuer := &fakeTokenIssuer{refresh: func(_ context.Context, token string) (service.AccessToken, error) {
+	issuer := &fakeTokenIssuer{refreshTokens: func(_ context.Context, token string) (service.TokenPair, error) {
 		require.Equal(t, "refresh-token", token)
-		return service.AccessToken{Value: "new-access"}, nil
+		return service.TokenPair{UserID: "user-1", AccessToken: service.AccessToken{Value: "new-access"}, RefreshToken: service.RefreshToken{Value: "new-refresh"}}, nil
 	}}
-	authService := service.New(repositorymocks.NewUserRepository(t), &fakePasswordHasher{}, issuer)
+	authService := service.New(repositorymocks.NewUserRepository(t), &fakePasswordHasher{}, issuer, &fakeRefreshSessionRepository{})
 	got, err := authService.Refresh(t.Context(), service.RefreshInput{RefreshToken: "refresh-token"})
 	require.NoError(t, err)
 	require.Equal(t, service.AccessToken{Value: "new-access"}, got)

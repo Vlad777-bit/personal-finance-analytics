@@ -12,6 +12,7 @@ import (
 	"github.com/Vlad777-bit/personal-finance-analytics/auth/internal/database"
 	dbpgx "github.com/Vlad777-bit/personal-finance-analytics/auth/internal/database/pgx"
 	passwordbcrypt "github.com/Vlad777-bit/personal-finance-analytics/auth/internal/password/bcrypt"
+	refreshsessionrepository "github.com/Vlad777-bit/personal-finance-analytics/auth/internal/repository/database/refreshsession"
 	userrepository "github.com/Vlad777-bit/personal-finance-analytics/auth/internal/repository/database/user"
 	"github.com/Vlad777-bit/personal-finance-analytics/auth/internal/service"
 	tokenjwt "github.com/Vlad777-bit/personal-finance-analytics/auth/internal/token/jwt"
@@ -53,11 +54,13 @@ func New(
 	userRepository := userrepository.New(
 		databaseClient,
 	)
+	refreshSessionRepository := refreshsessionrepository.New(databaseClient)
 
 	authService := service.New(
 		userRepository,
 		passwordHasher,
 		tokenIssuer,
+		refreshSessionRepository,
 	)
 	grpcServer := grpc.NewServer()
 	authv1.RegisterAuthServiceServer(

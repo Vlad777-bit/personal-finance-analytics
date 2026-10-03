@@ -83,8 +83,16 @@ func (i *Issuer) IssueRefresh(ctx context.Context, user domain.User) (service.Re
 }
 
 func (i *Issuer) Refresh(ctx context.Context, value string) (service.AccessToken, error) {
+	pair, err := i.RefreshTokens(ctx, value)
+	if err != nil {
+		return service.AccessToken{}, err
+	}
+	return pair.AccessToken, nil
+}
+
+func (i *Issuer) RefreshTokens(ctx context.Context, value string) (service.TokenPair, error) {
 	if err := ctx.Err(); err != nil {
-		return service.AccessToken{}, fmt.Errorf("refresh JWT: %w", err)
+		return service.TokenPair{}, fmt.Errorf("refresh JWT: %w", err)
 	}
 	parsedClaims := &claims{}
 	_, err := jwtlibrary.ParseWithClaims(value, parsedClaims,
@@ -94,13 +102,22 @@ func (i *Issuer) Refresh(ctx context.Context, value string) (service.AccessToken
 		jwtlibrary.WithTimeFunc(i.now),
 	)
 	if err != nil || parsedClaims.TokenType != "refresh" || parsedClaims.Subject == "" || parsedClaims.Email == "" {
-		return service.AccessToken{}, ErrInvalidRefreshToken
+		return service.TokenPair{}, ErrInvalidRefreshToken
 	}
-	value, expiresAt, err := i.issue(ctx, domain.User{ID: parsedClaims.Subject, Email: parsedClaims.Email}, i.ttl, "access")
+	user := domain.User{ID: parsedClaims.Subject, Email: parsedClaims.Email}
+	accessValue, accessExpiresAt, err := i.issue(ctx, user, i.ttl, "access")
 	if err != nil {
-		return service.AccessToken{}, err
+		return service.TokenPair{}, err
 	}
-	return service.AccessToken{Value: value, ExpiresAt: expiresAt}, nil
+	refreshValue, refreshExpiresAt, err := i.issue(ctx, user, i.refreshTTL, "refresh")
+	if err != nil {
+		return service.TokenPair{}, err
+	}
+	return service.TokenPair{
+		UserID:       parsedClaims.Subject,
+		AccessToken:  service.AccessToken{Value: accessValue, ExpiresAt: accessExpiresAt},
+		RefreshToken: service.RefreshToken{Value: refreshValue, ExpiresAt: refreshExpiresAt},
+	}, nil
 }
 
 func (i *Issuer) issue(ctx context.Context, user domain.User, ttl time.Duration, tokenType string) (string, time.Time, error) {

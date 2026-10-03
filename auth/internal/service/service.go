@@ -23,6 +23,7 @@ type TokenIssuer interface {
 	Issue(ctx context.Context, user domain.User) (AccessToken, error)
 	IssueRefresh(ctx context.Context, user domain.User) (RefreshToken, error)
 	Refresh(ctx context.Context, token string) (AccessToken, error)
+	RefreshTokens(ctx context.Context, token string) (TokenPair, error)
 }
 
 type AccessToken struct {
@@ -33,6 +34,12 @@ type AccessToken struct {
 type RefreshToken struct {
 	Value     string
 	ExpiresAt time.Time
+}
+
+type TokenPair struct {
+	UserID       string
+	AccessToken  AccessToken
+	RefreshToken RefreshToken
 }
 
 type RegisterInput struct {
@@ -59,19 +66,22 @@ type LoginResult struct {
 var _ AuthService = (*service)(nil)
 
 type service struct {
-	userRepository repository.UserRepository
-	passwordHasher PasswordHasher
-	tokenIssuer    TokenIssuer
+	userRepository  repository.UserRepository
+	passwordHasher  PasswordHasher
+	tokenIssuer     TokenIssuer
+	refreshSessions repository.RefreshSessionRepository
 }
 
 func New(
 	userRepository repository.UserRepository,
 	passwordHasher PasswordHasher,
 	tokenIssuer TokenIssuer,
+	refreshSessions repository.RefreshSessionRepository,
 ) AuthService {
 	return &service{
-		userRepository: userRepository,
-		passwordHasher: passwordHasher,
-		tokenIssuer:    tokenIssuer,
+		userRepository:  userRepository,
+		passwordHasher:  passwordHasher,
+		tokenIssuer:     tokenIssuer,
+		refreshSessions: refreshSessions,
 	}
 }
