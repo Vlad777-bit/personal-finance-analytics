@@ -16,10 +16,11 @@ import (
 )
 
 type fakeAuthClient struct {
-	register func(context.Context, authclient.RegisterInput) (authclient.User, error)
-	login    func(context.Context, authclient.LoginInput) (authclient.LoginResult, error)
-	refresh  func(context.Context, string) (authclient.RefreshResult, error)
-	logout   func(context.Context, string) error
+	register  func(context.Context, authclient.RegisterInput) (authclient.User, error)
+	login     func(context.Context, authclient.LoginInput) (authclient.LoginResult, error)
+	refresh   func(context.Context, string) (authclient.RefreshResult, error)
+	logout    func(context.Context, string) error
+	logoutAll func(context.Context, string) error
 }
 
 func (f *fakeAuthClient) Refresh(ctx context.Context, token string) (authclient.RefreshResult, error) {
@@ -34,6 +35,13 @@ func (f *fakeAuthClient) Logout(ctx context.Context, token string) error {
 		return errors.New("unexpected Logout call")
 	}
 	return f.logout(ctx, token)
+}
+
+func (f *fakeAuthClient) LogoutAll(ctx context.Context, userID string) error {
+	if f.logoutAll == nil {
+		return errors.New("unexpected LogoutAll call")
+	}
+	return f.logoutAll(ctx, userID)
 }
 
 func (f *fakeAuthClient) Register(

@@ -15,6 +15,7 @@ type Client interface {
 	Login(ctx context.Context, input authclient.LoginInput) (authclient.LoginResult, error)
 	Refresh(ctx context.Context, refreshToken string) (authclient.RefreshResult, error)
 	Logout(ctx context.Context, refreshToken string) error
+	LogoutAll(ctx context.Context, userID string) error
 }
 
 type Handler struct {

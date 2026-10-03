@@ -15,3 +15,13 @@ func (c *Client) Logout(ctx context.Context, refreshToken string) error {
 	}
 	return nil
 }
+
+func (c *Client) LogoutAll(ctx context.Context, userID string) error {
+	if userID == "" {
+		return ErrInvalidArgument
+	}
+	if _, err := c.service.LogoutAll(ctx, &authv1.LogoutAllRequest{UserId: userID}); err != nil {
+		return mapError(err)
+	}
+	return nil
+}

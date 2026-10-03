@@ -13,6 +13,7 @@ type AuthService interface {
 	Login(ctx context.Context, input LoginInput) (LoginResult, error)
 	Refresh(ctx context.Context, input RefreshInput) (TokenPair, error)
 	Logout(ctx context.Context, input RefreshInput) error
+	LogoutAll(ctx context.Context, userID string) error
 }
 
 type PasswordHasher interface {

@@ -15,4 +15,5 @@ type RefreshSessionRepository interface {
 	Create(ctx context.Context, session domain.RefreshSession) error
 	Consume(ctx context.Context, tokenHash string) error
 	DeleteExpired(ctx context.Context) error
+	RevokeAll(ctx context.Context, userID string) error
 }

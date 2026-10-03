@@ -130,6 +130,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /auth/logout-all:
+    post:
+      tags: [auth]
+      operationId: logoutAll
+      security: [{bearerAuth: []}]
+      responses:
+        '204':
+          description: All refresh sessions for the authenticated user revoked.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /budgets/{category}:
     put:
       tags: [budgets]

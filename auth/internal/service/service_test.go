@@ -67,6 +67,8 @@ func (f *fakeRefreshSessionRepository) Consume(ctx context.Context, tokenHash st
 
 func (f *fakeRefreshSessionRepository) DeleteExpired(context.Context) error { return nil }
 
+func (f *fakeRefreshSessionRepository) RevokeAll(context.Context, string) error { return nil }
+
 func (f *fakeTokenIssuer) Issue(
 	ctx context.Context,
 	user domain.User,

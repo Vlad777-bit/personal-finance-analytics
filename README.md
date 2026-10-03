@@ -154,6 +154,13 @@ curl -i -X POST http://localhost:8080/auth/logout \
   -d '{"refresh_token":"<refresh_token>"}'
 ```
 
+Отозвать все refresh-сессии текущего пользователя:
+
+```bash
+curl -i -X POST http://localhost:8080/auth/logout-all \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+```
+
 Передавайте токен в защищённые endpoints:
 
 ```bash

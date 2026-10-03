@@ -50,6 +50,24 @@ func (_m *AuthService) Logout(ctx context.Context, input service.RefreshInput) e
 	return ret.Error(0)
 }
 
+func (_m *AuthService) LogoutAll(ctx context.Context, userID string) error {
+	ret := _m.Called(ctx, userID)
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		return rf(ctx, userID)
+	}
+	return ret.Error(0)
+}
+
+type AuthService_LogoutAll_Call struct{ *mock.Call }
+
+func (_e *AuthService_Expecter) LogoutAll(ctx interface{}, userID interface{}) *AuthService_LogoutAll_Call {
+	return &AuthService_LogoutAll_Call{Call: _e.mock.On("LogoutAll", ctx, userID)}
+}
+func (_c *AuthService_LogoutAll_Call) Return(err error) *AuthService_LogoutAll_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
 type AuthService_Logout_Call struct{ *mock.Call }
 
 func (_e *AuthService_Expecter) Logout(ctx interface{}, input interface{}) *AuthService_Logout_Call {
