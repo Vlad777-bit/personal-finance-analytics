@@ -304,5 +304,17 @@ func TestService_Refresh(t *testing.T) {
 	authService := service.New(repositorymocks.NewUserRepository(t), &fakePasswordHasher{}, issuer, &fakeRefreshSessionRepository{})
 	got, err := authService.Refresh(t.Context(), service.RefreshInput{RefreshToken: "refresh-token"})
 	require.NoError(t, err)
-	require.Equal(t, service.AccessToken{Value: "new-access"}, got)
+	require.Equal(t, service.TokenPair{UserID: "user-1", AccessToken: service.AccessToken{Value: "new-access"}, RefreshToken: service.RefreshToken{Value: "new-refresh"}}, got)
+}
+
+func TestService_Logout(t *testing.T) {
+	t.Parallel()
+	var consumed string
+	sessions := &fakeRefreshSessionRepository{consume: func(_ context.Context, hash string) error {
+		consumed = hash
+		return nil
+	}}
+	authService := service.New(repositorymocks.NewUserRepository(t), &fakePasswordHasher{}, &fakeTokenIssuer{}, sessions)
+	require.NoError(t, authService.Logout(t.Context(), service.RefreshInput{RefreshToken: "refresh-token"}))
+	require.NotEmpty(t, consumed)
 }

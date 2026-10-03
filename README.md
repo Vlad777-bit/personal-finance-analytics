@@ -146,6 +146,14 @@ curl -X POST http://localhost:8080/auth/refresh \
   -d '{"refresh_token":"<refresh_token>"}'
 ```
 
+Завершить сессию и отозвать refresh-токен:
+
+```bash
+curl -i -X POST http://localhost:8080/auth/logout \
+  -H 'Content-Type: application/json' \
+  -d '{"refresh_token":"<refresh_token>"}'
+```
+
 Передавайте токен в защищённые endpoints:
 
 ```bash

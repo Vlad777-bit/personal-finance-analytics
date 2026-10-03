@@ -77,9 +77,11 @@ func TestServer_RejectsNilRequest(t *testing.T) {
 
 	_, registerErr := server.Register(t.Context(), nil)
 	_, loginErr := server.Login(t.Context(), nil)
+	_, logoutErr := server.Logout(t.Context(), nil)
 
 	require.Equal(t, codes.InvalidArgument, status.Code(registerErr))
 	require.Equal(t, codes.InvalidArgument, status.Code(loginErr))
+	require.Equal(t, codes.InvalidArgument, status.Code(logoutErr))
 }
 
 func TestServer_MapsServiceErrors(t *testing.T) {

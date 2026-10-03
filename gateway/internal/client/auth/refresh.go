@@ -15,11 +15,14 @@ func (c *Client) Refresh(ctx context.Context, refreshToken string) (RefreshResul
 	if err != nil {
 		return RefreshResult{}, mapError(err)
 	}
-	if response == nil || response.GetAccessToken() == "" || response.GetExpiresAt() == nil {
+	if response == nil || response.GetAccessToken() == "" || response.GetRefreshToken() == "" || response.GetExpiresAt() == nil || response.GetRefreshExpiresAt() == nil {
 		return RefreshResult{}, ErrInvalidResponse
 	}
 	if err := response.GetExpiresAt().CheckValid(); err != nil {
 		return RefreshResult{}, errors.Join(ErrInvalidResponse, err)
 	}
-	return RefreshResult{AccessToken: response.GetAccessToken(), ExpiresAt: response.GetExpiresAt().AsTime()}, nil
+	if err := response.GetRefreshExpiresAt().CheckValid(); err != nil {
+		return RefreshResult{}, errors.Join(ErrInvalidResponse, err)
+	}
+	return RefreshResult{AccessToken: response.GetAccessToken(), ExpiresAt: response.GetExpiresAt().AsTime(), RefreshToken: response.GetRefreshToken(), RefreshExpiresAt: response.GetRefreshExpiresAt().AsTime()}, nil
 }

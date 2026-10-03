@@ -33,8 +33,10 @@ type LoginResult struct {
 }
 
 type RefreshResult struct {
-	AccessToken string
-	ExpiresAt   time.Time
+	AccessToken      string
+	ExpiresAt        time.Time
+	RefreshToken     string
+	RefreshExpiresAt time.Time
 }
 
 func userFromProto(user *authv1.User) (User, error) {

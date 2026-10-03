@@ -17,5 +17,5 @@ func (s *Server) Refresh(ctx context.Context, request *authv1.RefreshRequest) (*
 	if err != nil {
 		return nil, mapServiceError(err)
 	}
-	return &authv1.RefreshResponse{AccessToken: result.Value, ExpiresAt: timestamppb.New(result.ExpiresAt)}, nil
+	return &authv1.RefreshResponse{AccessToken: result.AccessToken.Value, ExpiresAt: timestamppb.New(result.AccessToken.ExpiresAt), RefreshToken: result.RefreshToken.Value, RefreshExpiresAt: timestamppb.New(result.RefreshToken.ExpiresAt)}, nil
 }

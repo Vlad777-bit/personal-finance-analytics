@@ -10,6 +10,7 @@ service AuthService {
   rpc Register(RegisterRequest) returns (RegisterResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
   rpc Refresh(RefreshRequest) returns (RefreshResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
 }
 
 message User {
@@ -48,4 +49,12 @@ message RefreshRequest {
 message RefreshResponse {
   string access_token = 1;
   google.protobuf.Timestamp expires_at = 2;
+  string refresh_token = 3;
+  google.protobuf.Timestamp refresh_expires_at = 4;
 }
+
+message LogoutRequest {
+  string refresh_token = 1;
+}
+
+message LogoutResponse {}

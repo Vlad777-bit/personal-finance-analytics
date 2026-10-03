@@ -11,7 +11,8 @@ import (
 type AuthService interface {
 	Register(ctx context.Context, input RegisterInput) (domain.User, error)
 	Login(ctx context.Context, input LoginInput) (LoginResult, error)
-	Refresh(ctx context.Context, input RefreshInput) (AccessToken, error)
+	Refresh(ctx context.Context, input RefreshInput) (TokenPair, error)
+	Logout(ctx context.Context, input RefreshInput) error
 }
 
 type PasswordHasher interface {

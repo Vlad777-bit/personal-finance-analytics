@@ -14,6 +14,7 @@ type Client interface {
 	Register(ctx context.Context, input authclient.RegisterInput) (authclient.User, error)
 	Login(ctx context.Context, input authclient.LoginInput) (authclient.LoginResult, error)
 	Refresh(ctx context.Context, refreshToken string) (authclient.RefreshResult, error)
+	Logout(ctx context.Context, refreshToken string) error
 }
 
 type Handler struct {
@@ -45,8 +46,10 @@ type (
 		RefreshToken string `json:"refresh_token"`
 	}
 	refreshResponse struct {
-		AccessToken string    `json:"access_token"`
-		ExpiresAt   time.Time `json:"expires_at"`
+		AccessToken      string    `json:"access_token"`
+		ExpiresAt        time.Time `json:"expires_at"`
+		RefreshToken     string    `json:"refresh_token"`
+		RefreshExpiresAt time.Time `json:"refresh_expires_at"`
 	}
 )
 

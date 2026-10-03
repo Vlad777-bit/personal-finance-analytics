@@ -19,6 +19,7 @@ type fakeAuthClient struct {
 	register func(context.Context, authclient.RegisterInput) (authclient.User, error)
 	login    func(context.Context, authclient.LoginInput) (authclient.LoginResult, error)
 	refresh  func(context.Context, string) (authclient.RefreshResult, error)
+	logout   func(context.Context, string) error
 }
 
 func (f *fakeAuthClient) Refresh(ctx context.Context, token string) (authclient.RefreshResult, error) {
@@ -26,6 +27,13 @@ func (f *fakeAuthClient) Refresh(ctx context.Context, token string) (authclient.
 		return authclient.RefreshResult{}, errors.New("unexpected Refresh call")
 	}
 	return f.refresh(ctx, token)
+}
+
+func (f *fakeAuthClient) Logout(ctx context.Context, token string) error {
+	if f.logout == nil {
+		return errors.New("unexpected Logout call")
+	}
+	return f.logout(ctx, token)
 }
 
 func (f *fakeAuthClient) Register(
@@ -182,13 +190,25 @@ func TestHandler_Refresh(t *testing.T) {
 	expiresAt := time.Date(2026, time.October, 2, 12, 15, 0, 0, time.UTC)
 	client := &fakeAuthClient{refresh: func(_ context.Context, token string) (authclient.RefreshResult, error) {
 		require.Equal(t, "refresh-token", token)
-		return authclient.RefreshResult{AccessToken: "new-access", ExpiresAt: expiresAt}, nil
+		return authclient.RefreshResult{AccessToken: "new-access", ExpiresAt: expiresAt, RefreshToken: "new-refresh", RefreshExpiresAt: expiresAt.Add(24 * time.Hour)}, nil
 	}}
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodPost, "/auth/refresh", strings.NewReader(`{"refresh_token":"refresh-token"}`))
 	authtransport.NewHandler(client).Refresh(recorder, request)
 	require.Equal(t, http.StatusOK, recorder.Code)
-	require.JSONEq(t, `{"access_token":"new-access","expires_at":"2026-10-02T12:15:00Z"}`, recorder.Body.String())
+	require.JSONEq(t, `{"access_token":"new-access","expires_at":"2026-10-02T12:15:00Z","refresh_token":"new-refresh","refresh_expires_at":"2026-10-03T12:15:00Z"}`, recorder.Body.String())
+}
+
+func TestHandler_Logout(t *testing.T) {
+	t.Parallel()
+	client := &fakeAuthClient{logout: func(_ context.Context, token string) error {
+		require.Equal(t, "refresh-token", token)
+		return nil
+	}}
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/auth/logout", strings.NewReader(`{"refresh_token":"refresh-token"}`))
+	authtransport.NewHandler(client).Logout(recorder, request)
+	require.Equal(t, http.StatusNoContent, recorder.Code)
 }
 
 func clientMustNotBeCalled(t *testing.T) *fakeAuthClient {

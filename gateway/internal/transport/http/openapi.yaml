@@ -109,6 +109,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /auth/logout:
+    post:
+      tags: [auth]
+      operationId: logout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '204':
+          description: Refresh session revoked.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Invalid or already revoked refresh token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /budgets/{category}:
     put:
       tags: [budgets]
@@ -377,11 +398,16 @@ components:
           type: string
     RefreshResponse:
       type: object
-      required: [access_token, expires_at]
+      required: [access_token, expires_at, refresh_token, refresh_expires_at]
       properties:
         access_token:
           type: string
         expires_at:
+          type: string
+          format: date-time
+        refresh_token:
+          type: string
+        refresh_expires_at:
           type: string
           format: date-time
     UpsertBudgetRequest:

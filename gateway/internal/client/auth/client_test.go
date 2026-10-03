@@ -19,10 +19,15 @@ type fakeAuthServiceClient struct {
 	register func(context.Context, *authv1.RegisterRequest) (*authv1.RegisterResponse, error)
 	login    func(context.Context, *authv1.LoginRequest) (*authv1.LoginResponse, error)
 	refresh  func(context.Context, *authv1.RefreshRequest) (*authv1.RefreshResponse, error)
+	logout   func(context.Context, *authv1.LogoutRequest) (*authv1.LogoutResponse, error)
 }
 
 func (f *fakeAuthServiceClient) Refresh(ctx context.Context, request *authv1.RefreshRequest, _ ...grpc.CallOption) (*authv1.RefreshResponse, error) {
 	return f.refresh(ctx, request)
+}
+
+func (f *fakeAuthServiceClient) Logout(ctx context.Context, request *authv1.LogoutRequest, _ ...grpc.CallOption) (*authv1.LogoutResponse, error) {
+	return f.logout(ctx, request)
 }
 
 func (f *fakeAuthServiceClient) Register(

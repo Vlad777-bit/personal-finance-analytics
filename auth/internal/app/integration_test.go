@@ -98,6 +98,14 @@ func TestAuthGRPC(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, refreshResponse.GetAccessToken())
 	require.NotNil(t, refreshResponse.GetExpiresAt())
+	require.NotEmpty(t, refreshResponse.GetRefreshToken())
+	require.NotNil(t, refreshResponse.GetRefreshExpiresAt())
+	_, err = client.Refresh(rpcContext, &authv1.RefreshRequest{RefreshToken: loginResponse.GetRefreshToken()})
+	require.Equal(t, codes.Unauthenticated, status.Code(err))
+	_, err = client.Logout(rpcContext, &authv1.LogoutRequest{RefreshToken: refreshResponse.GetRefreshToken()})
+	require.NoError(t, err)
+	_, err = client.Refresh(rpcContext, &authv1.RefreshRequest{RefreshToken: refreshResponse.GetRefreshToken()})
+	require.Equal(t, codes.Unauthenticated, status.Code(err))
 
 	_, err = client.Login(rpcContext, &authv1.LoginRequest{
 		Email: email, Password: "wrong-password",

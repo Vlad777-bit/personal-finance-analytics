@@ -33,5 +33,6 @@ func TestOpenAPISpecification(t *testing.T) {
 	require.Contains(t, recorder.Body.String(), "openapi: 3.0.3")
 	require.Contains(t, recorder.Body.String(), "/transactions/import:")
 	require.Contains(t, recorder.Body.String(), "/auth/refresh:")
+	require.Contains(t, recorder.Body.String(), "/auth/logout:")
 	require.Contains(t, recorder.Body.String(), "refresh_expires_at")
 }

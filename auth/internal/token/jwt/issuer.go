@@ -2,6 +2,8 @@ package jwt
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strings"
@@ -126,10 +128,22 @@ func (i *Issuer) issue(ctx context.Context, user domain.User, ttl time.Duration,
 	}
 	issuedAt := i.now()
 	expiresAt := issuedAt.Add(ttl)
-	token := jwtlibrary.NewWithClaims(jwtlibrary.SigningMethodHS256, claims{Email: user.Email, TokenType: tokenType, RegisteredClaims: jwtlibrary.RegisteredClaims{Issuer: i.issuer, Subject: user.ID, IssuedAt: jwtlibrary.NewNumericDate(issuedAt), ExpiresAt: jwtlibrary.NewNumericDate(expiresAt)}})
+	jti, err := randomID()
+	if err != nil {
+		return "", time.Time{}, fmt.Errorf("generate JWT id: %w", err)
+	}
+	token := jwtlibrary.NewWithClaims(jwtlibrary.SigningMethodHS256, claims{Email: user.Email, TokenType: tokenType, RegisteredClaims: jwtlibrary.RegisteredClaims{ID: jti, Issuer: i.issuer, Subject: user.ID, IssuedAt: jwtlibrary.NewNumericDate(issuedAt), ExpiresAt: jwtlibrary.NewNumericDate(expiresAt)}})
 	value, err := token.SignedString(i.secret)
 	if err != nil {
 		return "", time.Time{}, fmt.Errorf("sign JWT: %w", err)
 	}
 	return value, expiresAt, nil
+}
+
+func randomID() (string, error) {
+	value := make([]byte, 16)
+	if _, err := rand.Read(value); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(value), nil
 }

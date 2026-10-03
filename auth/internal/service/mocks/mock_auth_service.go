@@ -22,17 +22,17 @@ type AuthService_Expecter struct {
 	mock *mock.Mock
 }
 
-func (_m *AuthService) Refresh(ctx context.Context, input service.RefreshInput) (service.AccessToken, error) {
+func (_m *AuthService) Refresh(ctx context.Context, input service.RefreshInput) (service.TokenPair, error) {
 	ret := _m.Called(ctx, input)
-	var r0 service.AccessToken
+	var r0 service.TokenPair
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.RefreshInput) (service.AccessToken, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.RefreshInput) (service.TokenPair, error)); ok {
 		return rf(ctx, input)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.RefreshInput) service.AccessToken); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.RefreshInput) service.TokenPair); ok {
 		r0 = rf(ctx, input)
 	} else {
-		r0 = ret.Get(0).(service.AccessToken)
+		r0 = ret.Get(0).(service.TokenPair)
 	}
 	if rf, ok := ret.Get(1).(func(context.Context, service.RefreshInput) error); ok {
 		r1 = rf(ctx, input)
@@ -42,16 +42,38 @@ func (_m *AuthService) Refresh(ctx context.Context, input service.RefreshInput) 
 	return r0, r1
 }
 
+func (_m *AuthService) Logout(ctx context.Context, input service.RefreshInput) error {
+	ret := _m.Called(ctx, input)
+	if rf, ok := ret.Get(0).(func(context.Context, service.RefreshInput) error); ok {
+		return rf(ctx, input)
+	}
+	return ret.Error(0)
+}
+
+type AuthService_Logout_Call struct{ *mock.Call }
+
+func (_e *AuthService_Expecter) Logout(ctx interface{}, input interface{}) *AuthService_Logout_Call {
+	return &AuthService_Logout_Call{Call: _e.mock.On("Logout", ctx, input)}
+}
+func (_c *AuthService_Logout_Call) Return(err error) *AuthService_Logout_Call {
+	_c.Call.Return(err)
+	return _c
+}
+func (_c *AuthService_Logout_Call) RunAndReturn(run func(context.Context, service.RefreshInput) error) *AuthService_Logout_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 type AuthService_Refresh_Call struct{ *mock.Call }
 
 func (_e *AuthService_Expecter) Refresh(ctx interface{}, input interface{}) *AuthService_Refresh_Call {
 	return &AuthService_Refresh_Call{Call: _e.mock.On("Refresh", ctx, input)}
 }
-func (_c *AuthService_Refresh_Call) Return(_a0 service.AccessToken, _a1 error) *AuthService_Refresh_Call {
+func (_c *AuthService_Refresh_Call) Return(_a0 service.TokenPair, _a1 error) *AuthService_Refresh_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
-func (_c *AuthService_Refresh_Call) RunAndReturn(run func(context.Context, service.RefreshInput) (service.AccessToken, error)) *AuthService_Refresh_Call {
+func (_c *AuthService_Refresh_Call) RunAndReturn(run func(context.Context, service.RefreshInput) (service.TokenPair, error)) *AuthService_Refresh_Call {
 	_c.Call.Return(run)
 	return _c
 }

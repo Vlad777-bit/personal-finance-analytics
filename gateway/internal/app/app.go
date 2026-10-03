@@ -71,6 +71,7 @@ func New(
 	router.HandleFunc("POST /auth/register", authHandler.Register)
 	router.HandleFunc("POST /auth/login", authHandler.Login)
 	router.HandleFunc("POST /auth/refresh", authHandler.Refresh)
+	router.HandleFunc("POST /auth/logout", authHandler.Logout)
 	router.Handle("PUT /budgets/{category}", authenticate(http.HandlerFunc(budgetHandler.Upsert)))
 	router.Handle("GET /budgets", authenticate(http.HandlerFunc(budgetHandler.GetBudgets)))
 	router.Handle("POST /transactions", authenticate(http.HandlerFunc(transactionHandler.Create)))
