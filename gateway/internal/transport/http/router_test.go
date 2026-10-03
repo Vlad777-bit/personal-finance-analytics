@@ -31,9 +31,9 @@ func TestOpenAPISpecification(t *testing.T) {
 	require.Equal(t, http.StatusOK, recorder.Code)
 	require.Equal(t, "application/yaml; charset=utf-8", recorder.Header().Get("Content-Type"))
 	require.Contains(t, recorder.Body.String(), "openapi: 3.0.3")
-	require.Contains(t, recorder.Body.String(), "/transactions/import:")
-	require.Contains(t, recorder.Body.String(), "/auth/refresh:")
-	require.Contains(t, recorder.Body.String(), "/auth/logout:")
-	require.Contains(t, recorder.Body.String(), "/auth/logout-all:")
+	require.Contains(t, recorder.Body.String(), "/api/transactions/import:")
+	require.Contains(t, recorder.Body.String(), "/api/auth/refresh:")
+	require.Contains(t, recorder.Body.String(), "/api/auth/logout:")
+	require.Contains(t, recorder.Body.String(), "/api/auth/logout-all:")
 	require.Contains(t, recorder.Body.String(), "refresh_expires_at")
 }

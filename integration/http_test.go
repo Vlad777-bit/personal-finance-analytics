@@ -112,7 +112,7 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		t,
 		httpClient,
 		http.MethodPost,
-		baseURL+"/auth/register",
+		baseURL+"/api/auth/register",
 		map[string]any{"email": testEmail, "password": "secure-password"},
 		http.StatusCreated,
 	)
@@ -120,7 +120,7 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		t,
 		httpClient,
 		http.MethodPost,
-		baseURL+"/auth/register",
+		baseURL+"/api/auth/register",
 		map[string]any{"email": testEmail, "password": "secure-password"},
 		http.StatusConflict,
 	)
@@ -129,7 +129,7 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		t,
 		httpClient,
 		http.MethodPost,
-		baseURL+"/auth/login",
+		baseURL+"/api/auth/login",
 		map[string]any{"email": testEmail, "password": "wrong-password"},
 		http.StatusUnauthorized,
 	)
@@ -137,7 +137,7 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		t,
 		httpClient,
 		http.MethodGet,
-		baseURL+"/budgets",
+		baseURL+"/api/budgets",
 		nil,
 		http.StatusUnauthorized,
 	)
@@ -152,7 +152,7 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		t,
 		authenticatedClient,
 		http.MethodPut,
-		baseURL+"/budgets/"+testCategory,
+		baseURL+"/api/budgets/"+testCategory,
 		map[string]any{"user_id": "another-user", "limit_amount": 3000},
 		http.StatusBadRequest,
 	)
@@ -160,7 +160,7 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		t,
 		authenticatedClient,
 		http.MethodPut,
-		baseURL+"/budgets/"+testCategory,
+		baseURL+"/api/budgets/"+testCategory,
 		map[string]any{"limit_amount": 3000},
 		http.StatusOK,
 	)
@@ -169,7 +169,7 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		t,
 		authenticatedClient,
 		http.MethodPost,
-		baseURL+"/transactions",
+		baseURL+"/api/transactions",
 		map[string]any{
 			"amount": 2000, "category": testCategory,
 			"description": "end-to-end", "occurred_at": "2026-09-30T12:00:00Z",
@@ -184,7 +184,7 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		t,
 		authenticatedClient,
 		http.MethodPost,
-		baseURL+"/transactions",
+		baseURL+"/api/transactions",
 		map[string]any{
 			"amount": 1500, "category": testCategory,
 			"occurred_at": "2026-09-30T12:00:00Z",
@@ -195,7 +195,7 @@ func TestGatewayLedgerHTTP(t *testing.T) {
 		t,
 		authenticatedClient,
 		http.MethodPost,
-		baseURL+"/transactions",
+		baseURL+"/api/transactions",
 		[]byte("{"),
 		http.StatusBadRequest,
 	)
@@ -207,7 +207,7 @@ func assertCSVImport(t *testing.T, client *http.Client, baseURL, userID string) 
 	request, err := http.NewRequestWithContext(
 		context.Background(),
 		http.MethodPost,
-		baseURL+"/transactions/import",
+		baseURL+"/api/transactions/import",
 		strings.NewReader("amount,category,description,occurred_at\n500,"+testCategory+",imported,2026-09-30T12:30:00Z\n"),
 	)
 	if err != nil {
@@ -246,7 +246,7 @@ func assertCSVExport(t *testing.T, client *http.Client, baseURL string) {
 	request, err := http.NewRequestWithContext(
 		context.Background(),
 		http.MethodGet,
-		baseURL+"/transactions/export?"+query.Encode(),
+		baseURL+"/api/transactions/export?"+query.Encode(),
 		http.NoBody,
 	)
 	if err != nil {
@@ -286,7 +286,7 @@ func assertLogin(t *testing.T, client *http.Client, baseURL string) (string, str
 	request, err := http.NewRequestWithContext(
 		context.Background(),
 		http.MethodPost,
-		baseURL+"/auth/login",
+		baseURL+"/api/auth/login",
 		&body,
 	)
 	if err != nil {
@@ -330,7 +330,7 @@ func assertSummary(t *testing.T, client *http.Client, baseURL, userID string) {
 	request, err := http.NewRequestWithContext(
 		context.Background(),
 		http.MethodGet,
-		baseURL+"/reports/summary?"+query.Encode(),
+		baseURL+"/api/reports/summary?"+query.Encode(),
 		http.NoBody,
 	)
 	if err != nil {
@@ -385,7 +385,7 @@ func assertBudgetList(t *testing.T, client *http.Client, baseURL, userID string)
 	request, err := http.NewRequestWithContext(
 		context.Background(),
 		http.MethodGet,
-		baseURL+"/budgets",
+		baseURL+"/api/budgets",
 		http.NoBody,
 	)
 	if err != nil {
@@ -432,7 +432,7 @@ func assertTransactionList(t *testing.T, client *http.Client, baseURL, userID st
 	request, err := http.NewRequestWithContext(
 		context.Background(),
 		http.MethodGet,
-		baseURL+"/transactions?"+query.Encode(),
+		baseURL+"/api/transactions?"+query.Encode(),
 		http.NoBody,
 	)
 	if err != nil {

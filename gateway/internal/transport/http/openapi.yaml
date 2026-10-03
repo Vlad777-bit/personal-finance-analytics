@@ -34,7 +34,7 @@ paths:
             application/yaml:
               schema:
                 type: string
-  /auth/register:
+  /api/auth/register:
     post:
       tags: [auth]
       operationId: register
@@ -59,7 +59,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /auth/login:
+  /api/auth/login:
     post:
       tags: [auth]
       operationId: login
@@ -84,7 +84,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /auth/refresh:
+  /api/auth/refresh:
     post:
       tags: [auth]
       operationId: refreshAccessToken
@@ -109,7 +109,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /auth/logout:
+  /api/auth/logout:
     post:
       tags: [auth]
       operationId: logout
@@ -130,7 +130,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /auth/logout-all:
+  /api/auth/logout-all:
     post:
       tags: [auth]
       operationId: logoutAll
@@ -140,7 +140,7 @@ paths:
           description: All refresh sessions for the authenticated user revoked.
         '401':
           $ref: '#/components/responses/Unauthorized'
-  /budgets/{category}:
+  /api/budgets/{category}:
     put:
       tags: [budgets]
       operationId: upsertBudget
@@ -164,7 +164,7 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-  /budgets:
+  /api/budgets:
     get:
       tags: [budgets]
       operationId: getBudgets
@@ -180,7 +180,7 @@ paths:
                   $ref: '#/components/schemas/Budget'
         '401':
           $ref: '#/components/responses/Unauthorized'
-  /transactions:
+  /api/transactions:
     post:
       tags: [transactions]
       operationId: createTransaction
@@ -229,7 +229,7 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-  /transactions/import:
+  /api/transactions/import:
     post:
       tags: [transactions]
       operationId: importTransactions
@@ -259,7 +259,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /transactions/export:
+  /api/transactions/export:
     get:
       tags: [transactions]
       operationId: exportTransactions
@@ -279,7 +279,7 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-  /reports/summary:
+  /api/reports/summary:
     get:
       tags: [reports]
       operationId: getSummary

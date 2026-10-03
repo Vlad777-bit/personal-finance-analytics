@@ -67,19 +67,18 @@ func New(
 
 	router := httptransport.NewRouter()
 	authenticate := middleware.Authenticate(tokenVerifier)
-
-	router.HandleFunc("POST /auth/register", authHandler.Register)
-	router.HandleFunc("POST /auth/login", authHandler.Login)
-	router.HandleFunc("POST /auth/refresh", authHandler.Refresh)
-	router.HandleFunc("POST /auth/logout", authHandler.Logout)
-	router.Handle("POST /auth/logout-all", authenticate(http.HandlerFunc(authHandler.LogoutAll)))
-	router.Handle("PUT /budgets/{category}", authenticate(http.HandlerFunc(budgetHandler.Upsert)))
-	router.Handle("GET /budgets", authenticate(http.HandlerFunc(budgetHandler.GetBudgets)))
-	router.Handle("POST /transactions", authenticate(http.HandlerFunc(transactionHandler.Create)))
-	router.Handle("GET /transactions", authenticate(http.HandlerFunc(transactionHandler.GetTransactions)))
-	router.Handle("POST /transactions/import", authenticate(http.HandlerFunc(csvHandler.Import)))
-	router.Handle("GET /transactions/export", authenticate(http.HandlerFunc(csvHandler.Export)))
-	router.Handle("GET /reports/summary", authenticate(http.HandlerFunc(reportHandler.GetSummary)))
+	router.Handle("POST /api/auth/register", http.HandlerFunc(authHandler.Register))
+	router.Handle("POST /api/auth/login", http.HandlerFunc(authHandler.Login))
+	router.Handle("POST /api/auth/refresh", http.HandlerFunc(authHandler.Refresh))
+	router.Handle("POST /api/auth/logout", http.HandlerFunc(authHandler.Logout))
+	router.Handle("POST /api/auth/logout-all", authenticate(http.HandlerFunc(authHandler.LogoutAll)))
+	router.Handle("PUT /api/budgets/{category}", authenticate(http.HandlerFunc(budgetHandler.Upsert)))
+	router.Handle("GET /api/budgets", authenticate(http.HandlerFunc(budgetHandler.GetBudgets)))
+	router.Handle("POST /api/transactions", authenticate(http.HandlerFunc(transactionHandler.Create)))
+	router.Handle("GET /api/transactions", authenticate(http.HandlerFunc(transactionHandler.GetTransactions)))
+	router.Handle("POST /api/transactions/import", authenticate(http.HandlerFunc(csvHandler.Import)))
+	router.Handle("GET /api/transactions/export", authenticate(http.HandlerFunc(csvHandler.Export)))
+	router.Handle("GET /api/reports/summary", authenticate(http.HandlerFunc(reportHandler.GetSummary)))
 
 	return &App{
 		server: &http.Server{

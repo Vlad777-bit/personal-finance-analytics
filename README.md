@@ -125,7 +125,7 @@ curl http://localhost:8080/openapi.yaml -o openapi.yaml
 Зарегистрируйте пользователя:
 
 ```bash
-curl -X POST http://localhost:8080/auth/register \
+curl -X POST http://localhost:8080/api/auth/register \
   -H 'Content-Type: application/json' \
   -d '{"email":"user@example.com","password":"secure-password"}'
 ```
@@ -133,7 +133,7 @@ curl -X POST http://localhost:8080/auth/register \
 Получите access token:
 
 ```bash
-curl -X POST http://localhost:8080/auth/login \
+curl -X POST http://localhost:8080/api/auth/login \
   -H 'Content-Type: application/json' \
   -d '{"email":"user@example.com","password":"secure-password"}'
 ```
@@ -141,7 +141,7 @@ curl -X POST http://localhost:8080/auth/login \
 Ответ login содержит access и refresh токены. Если access token истёк, получите новый без повторного ввода пароля:
 
 ```bash
-curl -X POST http://localhost:8080/auth/refresh \
+curl -X POST http://localhost:8080/api/auth/refresh \
   -H 'Content-Type: application/json' \
   -d '{"refresh_token":"<refresh_token>"}'
 ```
@@ -149,7 +149,7 @@ curl -X POST http://localhost:8080/auth/refresh \
 Завершить сессию и отозвать refresh-токен:
 
 ```bash
-curl -i -X POST http://localhost:8080/auth/logout \
+curl -i -X POST http://localhost:8080/api/auth/logout \
   -H 'Content-Type: application/json' \
   -d '{"refresh_token":"<refresh_token>"}'
 ```
@@ -157,7 +157,7 @@ curl -i -X POST http://localhost:8080/auth/logout \
 Отозвать все refresh-сессии текущего пользователя:
 
 ```bash
-curl -i -X POST http://localhost:8080/auth/logout-all \
+curl -i -X POST http://localhost:8080/api/auth/logout-all \
   -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
@@ -165,7 +165,7 @@ curl -i -X POST http://localhost:8080/auth/logout-all \
 
 ```bash
 export ACCESS_TOKEN='<access_token>'
-curl http://localhost:8080/budgets \
+curl http://localhost:8080/api/budgets \
   -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
@@ -178,7 +178,7 @@ curl http://localhost:8080/budgets \
 Создать или обновить бюджет:
 
 ```bash
-curl -X PUT http://localhost:8080/budgets/food \
+curl -X PUT http://localhost:8080/api/budgets/food \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"limit_amount":3000}'
@@ -187,7 +187,7 @@ curl -X PUT http://localhost:8080/budgets/food \
 Получить бюджеты текущего пользователя:
 
 ```bash
-curl http://localhost:8080/budgets \
+curl http://localhost:8080/api/budgets \
   -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
@@ -196,7 +196,7 @@ curl http://localhost:8080/budgets \
 Создать транзакцию. Денежные суммы передаются в минимальных денежных единицах и хранятся как `int64`:
 
 ```bash
-curl -X POST http://localhost:8080/transactions \
+curl -X POST http://localhost:8080/api/transactions \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{
@@ -210,14 +210,14 @@ curl -X POST http://localhost:8080/transactions \
 Получить транзакции за период:
 
 ```bash
-curl 'http://localhost:8080/transactions?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z&category=food' \
+curl 'http://localhost:8080/api/transactions?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z&category=food' \
   -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
 ### Reports
 
 ```bash
-curl 'http://localhost:8080/reports/summary?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z' \
+curl 'http://localhost:8080/api/reports/summary?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z' \
   -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
@@ -235,7 +235,7 @@ amount,category,description,occurred_at
 Импорт:
 
 ```bash
-curl -X POST http://localhost:8080/transactions/import \
+curl -X POST http://localhost:8080/api/transactions/import \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H 'Content-Type: text/csv' \
   --data-binary @transactions.csv
@@ -244,7 +244,7 @@ curl -X POST http://localhost:8080/transactions/import \
 Экспорт:
 
 ```bash
-curl 'http://localhost:8080/transactions/export?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z' \
+curl 'http://localhost:8080/api/transactions/export?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z' \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -o exported-transactions.csv
 ```
@@ -308,31 +308,31 @@ task migration:up
 task migration:auth:up
 
 # 2. Регистрация и login
-curl -X POST http://localhost:8080/auth/register \
+curl -X POST http://localhost:8080/api/auth/register \
   -H 'Content-Type: application/json' \
   -d '{"email":"demo@example.com","password":"secure-password"}'
 
-LOGIN_RESPONSE=$(curl --silent -X POST http://localhost:8080/auth/login \
+LOGIN_RESPONSE=$(curl --silent -X POST http://localhost:8080/api/auth/login \
   -H 'Content-Type: application/json' \
   -d '{"email":"demo@example.com","password":"secure-password"}')
 export ACCESS_TOKEN=$(printf '%s' "$LOGIN_RESPONSE" | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
 
 # 3. Бюджет и транзакция
-curl -X PUT http://localhost:8080/budgets/food \
+curl -X PUT http://localhost:8080/api/budgets/food \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"limit_amount":3000}'
 
-curl -X POST http://localhost:8080/transactions \
+curl -X POST http://localhost:8080/api/transactions \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"amount":1500,"category":"food","description":"lunch","occurred_at":"2026-10-01T12:00:00Z"}'
 
 # 4. Отчёт и CSV
-curl "http://localhost:8080/reports/summary?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z" \
+curl "http://localhost:8080/api/reports/summary?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z" \
   -H "Authorization: Bearer $ACCESS_TOKEN"
 
-curl "http://localhost:8080/transactions/export?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z" \
+curl "http://localhost:8080/api/transactions/export?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z" \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -o exported-transactions.csv
 ```
@@ -380,11 +380,11 @@ curl --fail http://localhost:8080/openapi.yaml | head
 ### 4. Проверить Auth
 
 ```bash
-curl -X POST http://localhost:8080/auth/register \
+curl -X POST http://localhost:8080/api/auth/register \
   -H 'Content-Type: application/json' \
   -d '{"email":"check@example.com","password":"secure-password"}'
 
-curl -X POST http://localhost:8080/auth/login \
+curl -X POST http://localhost:8080/api/auth/login \
   -H 'Content-Type: application/json' \
   -d '{"email":"check@example.com","password":"secure-password"}'
 ```
@@ -400,12 +400,12 @@ export ACCESS_TOKEN='<access_token>'
 ### 5. Проверить Ledger ownership и budgets
 
 ```bash
-curl -X PUT http://localhost:8080/budgets/food \
+curl -X PUT http://localhost:8080/api/budgets/food \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"limit_amount":3000}'
 
-curl --fail http://localhost:8080/budgets \
+curl --fail http://localhost:8080/api/budgets \
   -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
@@ -414,12 +414,12 @@ curl --fail http://localhost:8080/budgets \
 ### 6. Проверить transactions и budget invariant
 
 ```bash
-curl -X POST http://localhost:8080/transactions \
+curl -X POST http://localhost:8080/api/transactions \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"amount":1500,"category":"food","description":"check","occurred_at":"2026-10-01T12:00:00Z"}'
 
-curl 'http://localhost:8080/transactions?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z' \
+curl 'http://localhost:8080/api/transactions?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z' \
   -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
@@ -428,10 +428,10 @@ curl 'http://localhost:8080/transactions?from=2026-10-01T00:00:00Z&to=2026-11-01
 ### 7. Проверить reports и Redis cache
 
 ```bash
-curl 'http://localhost:8080/reports/summary?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z' \
+curl 'http://localhost:8080/api/reports/summary?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z' \
   -H "Authorization: Bearer $ACCESS_TOKEN"
 
-curl 'http://localhost:8080/reports/summary?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z' \
+curl 'http://localhost:8080/api/reports/summary?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z' \
   -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
@@ -451,7 +451,7 @@ CSV
 Импортируйте его:
 
 ```bash
-curl -X POST http://localhost:8080/transactions/import \
+curl -X POST http://localhost:8080/api/transactions/import \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H 'Content-Type: text/csv' \
   --data-binary @transactions.csv
@@ -462,7 +462,7 @@ curl -X POST http://localhost:8080/transactions/import \
 Экспортируйте период:
 
 ```bash
-curl 'http://localhost:8080/transactions/export?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z' \
+curl 'http://localhost:8080/api/transactions/export?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z' \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -o exported-transactions.csv
 ```
@@ -503,7 +503,7 @@ Apps Script находится в [integrations/google-sheets/Code.gs](integrati
 
 1. Откройте Google Sheet и выберите `Extensions → Apps Script`.
 2. Скопируйте содержимое `integrations/google-sheets/Code.gs`.
-3. Получите JWT через `/auth/login`.
+3. Получите JWT через `/api/auth/login`.
 4. Один раз выполните в редакторе Apps Script:
 
 ```javascript

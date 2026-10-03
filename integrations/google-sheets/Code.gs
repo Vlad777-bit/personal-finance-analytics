@@ -39,7 +39,7 @@ function createTransaction(amount, category, description, occurredAt) {
     occurred_at: new Date(occurredAt).toISOString(),
   };
 
-  return requestGateway_('/transactions', 'post', payload);
+  return requestGateway_('/api/transactions', 'post', payload);
 }
 
 function createTransactionFromActiveRow() {
@@ -57,7 +57,7 @@ function getSummary(from, to) {
   const query = '?from=' + encodeURIComponent(new Date(from).toISOString()) +
     '&to=' + encodeURIComponent(new Date(to).toISOString());
 
-  return requestGateway_('/reports/summary' + query, 'get');
+  return requestGateway_('/api/reports/summary' + query, 'get');
 }
 
 function writeCurrentMonthSummary() {
