@@ -32,4 +32,6 @@ func TestOpenAPISpecification(t *testing.T) {
 	require.Equal(t, "application/yaml; charset=utf-8", recorder.Header().Get("Content-Type"))
 	require.Contains(t, recorder.Body.String(), "openapi: 3.0.3")
 	require.Contains(t, recorder.Body.String(), "/transactions/import:")
+	require.Contains(t, recorder.Body.String(), "/auth/refresh:")
+	require.Contains(t, recorder.Body.String(), "refresh_expires_at")
 }
