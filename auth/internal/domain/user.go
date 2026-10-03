@@ -20,6 +20,13 @@ type User struct {
 	UpdatedAt    time.Time
 }
 
+type RefreshSession struct {
+	TokenHash string
+	UserID    string
+	ExpiresAt time.Time
+	CreatedAt time.Time
+}
+
 func NewUser(email, passwordHash string) (User, error) {
 	normalizedEmail, err := NormalizeEmail(email)
 	if err != nil {
