@@ -24,8 +24,15 @@ type LoginInput struct {
 }
 
 type LoginResult struct {
-	UserID      string
-	Email       string
+	UserID           string
+	Email            string
+	AccessToken      string
+	ExpiresAt        time.Time
+	RefreshToken     string
+	RefreshExpiresAt time.Time
+}
+
+type RefreshResult struct {
 	AccessToken string
 	ExpiresAt   time.Time
 }

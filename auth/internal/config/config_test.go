@@ -36,6 +36,7 @@ func TestLoad(t *testing.T) {
 				JWTSecret:       testJWTSecret,
 				JWTIssuer:       "personal-finance-analytics/auth",
 				JWTAccessTTL:    15 * time.Minute,
+				JWTRefreshTTL:   30 * 24 * time.Hour,
 			},
 		},
 		{
@@ -55,6 +56,7 @@ func TestLoad(t *testing.T) {
 				JWTSecret:       testJWTSecret + "-custom",
 				JWTIssuer:       "custom-auth",
 				JWTAccessTTL:    30 * time.Minute,
+				JWTRefreshTTL:   30 * 24 * time.Hour,
 			},
 		},
 		{name: "missing database URL", jwtSecret: testJWTSecret, wantError: true},

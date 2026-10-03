@@ -41,6 +41,7 @@ func run() int {
 		cfg.JWTSecret,
 		cfg.JWTIssuer,
 		cfg.JWTAccessTTL,
+		cfg.JWTRefreshTTL,
 		grpcAddress,
 	)
 	if err != nil {

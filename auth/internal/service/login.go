@@ -40,10 +40,15 @@ func (s *service) Login(
 	if err != nil {
 		return LoginResult{}, fmt.Errorf("issue access token: %w", err)
 	}
+	refreshToken, err := s.tokenIssuer.IssueRefresh(ctx, user)
+	if err != nil {
+		return LoginResult{}, fmt.Errorf("issue refresh token: %w", err)
+	}
 
 	return LoginResult{
-		UserID:      user.ID,
-		Email:       user.Email,
-		AccessToken: accessToken,
+		UserID:       user.ID,
+		Email:        user.Email,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
 	}, nil
 }

@@ -13,6 +13,7 @@ import (
 type Client interface {
 	Register(ctx context.Context, input authclient.RegisterInput) (authclient.User, error)
 	Login(ctx context.Context, input authclient.LoginInput) (authclient.LoginResult, error)
+	Refresh(ctx context.Context, refreshToken string) (authclient.RefreshResult, error)
 }
 
 type Handler struct {
@@ -31,11 +32,23 @@ type userResponse struct {
 }
 
 type loginResponse struct {
-	UserID      string    `json:"user_id"`
-	Email       string    `json:"email"`
-	AccessToken string    `json:"access_token"`
-	ExpiresAt   time.Time `json:"expires_at"`
+	UserID           string    `json:"user_id"`
+	Email            string    `json:"email"`
+	AccessToken      string    `json:"access_token"`
+	ExpiresAt        time.Time `json:"expires_at"`
+	RefreshToken     string    `json:"refresh_token"`
+	RefreshExpiresAt time.Time `json:"refresh_expires_at"`
 }
+
+type (
+	refreshRequest struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+	refreshResponse struct {
+		AccessToken string    `json:"access_token"`
+		ExpiresAt   time.Time `json:"expires_at"`
+	}
+)
 
 func NewHandler(client Client) *Handler {
 	return &Handler{client: client}

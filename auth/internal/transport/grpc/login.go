@@ -26,9 +26,11 @@ func (s *Server) Login(
 	}
 
 	return &authv1.LoginResponse{
-		UserId:      result.UserID,
-		Email:       result.Email,
-		AccessToken: result.AccessToken.Value,
-		ExpiresAt:   timestamppb.New(result.AccessToken.ExpiresAt),
+		UserId:           result.UserID,
+		Email:            result.Email,
+		AccessToken:      result.AccessToken.Value,
+		ExpiresAt:        timestamppb.New(result.AccessToken.ExpiresAt),
+		RefreshToken:     result.RefreshToken.Value,
+		RefreshExpiresAt: timestamppb.New(result.RefreshToken.ExpiresAt),
 	}, nil
 }

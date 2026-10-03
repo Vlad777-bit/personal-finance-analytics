@@ -18,6 +18,11 @@ import (
 type fakeAuthServiceClient struct {
 	register func(context.Context, *authv1.RegisterRequest) (*authv1.RegisterResponse, error)
 	login    func(context.Context, *authv1.LoginRequest) (*authv1.LoginResponse, error)
+	refresh  func(context.Context, *authv1.RefreshRequest) (*authv1.RefreshResponse, error)
+}
+
+func (f *fakeAuthServiceClient) Refresh(ctx context.Context, request *authv1.RefreshRequest, _ ...grpc.CallOption) (*authv1.RefreshResponse, error) {
+	return f.refresh(ctx, request)
 }
 
 func (f *fakeAuthServiceClient) Register(
@@ -117,6 +122,7 @@ func TestClient_Login(t *testing.T) {
 	t.Parallel()
 
 	expiresAt := time.Date(2026, time.October, 2, 12, 15, 0, 0, time.UTC)
+	refreshExpiresAt := expiresAt.Add(24 * time.Hour)
 	tests := []struct {
 		name    string
 		call    func(*testing.T, *authv1.LoginRequest) (*authv1.LoginResponse, error)
@@ -133,11 +139,13 @@ func TestClient_Login(t *testing.T) {
 				return &authv1.LoginResponse{
 					UserId: "user-1", Email: "user@example.com",
 					AccessToken: "access-token", ExpiresAt: timestamppb.New(expiresAt),
+					RefreshToken: "refresh-token", RefreshExpiresAt: timestamppb.New(refreshExpiresAt),
 				}, nil
 			},
 			want: LoginResult{
 				UserID: "user-1", Email: "user@example.com",
 				AccessToken: "access-token", ExpiresAt: expiresAt,
+				RefreshToken: "refresh-token", RefreshExpiresAt: refreshExpiresAt,
 			},
 		},
 		{
@@ -166,7 +174,8 @@ func TestClient_Login(t *testing.T) {
 			call: func(*testing.T, *authv1.LoginRequest) (*authv1.LoginResponse, error) {
 				return &authv1.LoginResponse{
 					UserId: "user-1", Email: "user@example.com", AccessToken: "token",
-					ExpiresAt: &timestamppb.Timestamp{Seconds: 253402300800},
+					ExpiresAt:    &timestamppb.Timestamp{Seconds: 253402300800},
+					RefreshToken: "refresh-token", RefreshExpiresAt: timestamppb.New(refreshExpiresAt),
 				}, nil
 			},
 			wantErr: ErrInvalidResponse,

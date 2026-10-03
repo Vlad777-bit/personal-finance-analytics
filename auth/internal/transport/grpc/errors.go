@@ -30,6 +30,8 @@ func mapServiceError(err error) error {
 		return status.Error(codes.AlreadyExists, err.Error())
 	case errors.Is(err, domain.ErrInvalidCredentials):
 		return status.Error(codes.Unauthenticated, err.Error())
+	case errors.Is(err, domain.ErrInvalidRefreshToken):
+		return status.Error(codes.Unauthenticated, err.Error())
 	default:
 		return status.Error(codes.Internal, "internal error")
 	}

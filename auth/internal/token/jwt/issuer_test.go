@@ -16,7 +16,7 @@ func TestIssuer_Issue(t *testing.T) {
 	t.Parallel()
 
 	now := time.Date(2026, time.October, 2, 12, 0, 0, 0, time.UTC)
-	issuer, err := newIssuer("test-secret", "auth", time.Hour, func() time.Time { return now })
+	issuer, err := newIssuer("test-secret", "auth", time.Hour, 24*time.Hour, func() time.Time { return now })
 	require.NoError(t, err)
 
 	accessToken, err := issuer.Issue(t.Context(), domain.User{
@@ -46,13 +46,27 @@ func TestIssuer_Issue(t *testing.T) {
 func TestIssuer_Issue_CanceledContext(t *testing.T) {
 	t.Parallel()
 
-	issuer, err := New("test-secret", "auth", time.Hour)
+	issuer, err := New("test-secret", "auth", time.Hour, 24*time.Hour)
 	require.NoError(t, err)
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
 	_, err = issuer.Issue(ctx, domain.User{ID: "user-1", Email: "user@example.com"})
 	require.ErrorIs(t, err, context.Canceled)
+}
+
+func TestIssuer_Refresh(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, time.October, 2, 12, 0, 0, 0, time.UTC)
+	issuer, err := newIssuer("test-secret", "auth", time.Hour, 24*time.Hour, func() time.Time { return now })
+	require.NoError(t, err)
+	refreshToken, err := issuer.IssueRefresh(t.Context(), domain.User{ID: "user-1", Email: "user@example.com"})
+	require.NoError(t, err)
+	accessToken, err := issuer.Refresh(t.Context(), refreshToken.Value)
+	require.NoError(t, err)
+	require.Equal(t, now.Add(time.Hour), accessToken.ExpiresAt)
+	_, err = issuer.Refresh(t.Context(), accessToken.Value)
+	require.ErrorIs(t, err, ErrInvalidRefreshToken)
 }
 
 func TestNew(t *testing.T) {
@@ -78,7 +92,7 @@ func TestNew(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := New(tt.secret, tt.issuer, tt.ttl)
+			_, err := New(tt.secret, tt.issuer, tt.ttl, time.Hour)
 			require.ErrorIs(t, err, tt.wantErr)
 		})
 	}
@@ -88,7 +102,7 @@ func TestIssuer_Issue_RejectsExpiredToken(t *testing.T) {
 	t.Parallel()
 
 	issuedAt := time.Date(2026, time.October, 2, 12, 0, 0, 0, time.UTC)
-	issuer, err := newIssuer("test-secret", "auth", time.Minute, func() time.Time { return issuedAt })
+	issuer, err := newIssuer("test-secret", "auth", time.Minute, time.Hour, func() time.Time { return issuedAt })
 	require.NoError(t, err)
 	accessToken, err := issuer.Issue(t.Context(), domain.User{ID: "user-1", Email: "user@example.com"})
 	require.NoError(t, err)

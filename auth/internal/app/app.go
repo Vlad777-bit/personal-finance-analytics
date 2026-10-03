@@ -32,6 +32,7 @@ func New(
 	jwtSecret string,
 	jwtIssuer string,
 	jwtAccessTTL time.Duration,
+	jwtRefreshTTL time.Duration,
 	grpcAddress string,
 ) (*App, error) {
 	passwordHasher, err := passwordbcrypt.New(bcryptCost)
@@ -39,7 +40,7 @@ func New(
 		return nil, fmt.Errorf("create password hasher: %w", err)
 	}
 
-	tokenIssuer, err := tokenjwt.New(jwtSecret, jwtIssuer, jwtAccessTTL)
+	tokenIssuer, err := tokenjwt.New(jwtSecret, jwtIssuer, jwtAccessTTL, jwtRefreshTTL)
 	if err != nil {
 		return nil, fmt.Errorf("create token issuer: %w", err)
 	}

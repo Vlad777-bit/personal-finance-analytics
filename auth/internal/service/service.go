@@ -11,6 +11,7 @@ import (
 type AuthService interface {
 	Register(ctx context.Context, input RegisterInput) (domain.User, error)
 	Login(ctx context.Context, input LoginInput) (LoginResult, error)
+	Refresh(ctx context.Context, input RefreshInput) (AccessToken, error)
 }
 
 type PasswordHasher interface {
@@ -20,9 +21,16 @@ type PasswordHasher interface {
 
 type TokenIssuer interface {
 	Issue(ctx context.Context, user domain.User) (AccessToken, error)
+	IssueRefresh(ctx context.Context, user domain.User) (RefreshToken, error)
+	Refresh(ctx context.Context, token string) (AccessToken, error)
 }
 
 type AccessToken struct {
+	Value     string
+	ExpiresAt time.Time
+}
+
+type RefreshToken struct {
 	Value     string
 	ExpiresAt time.Time
 }
@@ -37,10 +45,15 @@ type LoginInput struct {
 	Password string
 }
 
+type RefreshInput struct {
+	RefreshToken string
+}
+
 type LoginResult struct {
-	UserID      string
-	Email       string
-	AccessToken AccessToken
+	UserID       string
+	Email        string
+	AccessToken  AccessToken
+	RefreshToken RefreshToken
 }
 
 var _ AuthService = (*service)(nil)

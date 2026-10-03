@@ -19,7 +19,23 @@ type fakePasswordHasher struct {
 }
 
 type fakeTokenIssuer struct {
-	issue func(context.Context, domain.User) (service.AccessToken, error)
+	issue        func(context.Context, domain.User) (service.AccessToken, error)
+	issueRefresh func(context.Context, domain.User) (service.RefreshToken, error)
+	refresh      func(context.Context, string) (service.AccessToken, error)
+}
+
+func (f *fakeTokenIssuer) IssueRefresh(ctx context.Context, user domain.User) (service.RefreshToken, error) {
+	if f.issueRefresh == nil {
+		return service.RefreshToken{Value: "refresh-token"}, nil
+	}
+	return f.issueRefresh(ctx, user)
+}
+
+func (f *fakeTokenIssuer) Refresh(ctx context.Context, token string) (service.AccessToken, error) {
+	if f.refresh == nil {
+		return service.AccessToken{Value: "access-token"}, nil
+	}
+	return f.refresh(ctx, token)
 }
 
 func (f *fakeTokenIssuer) Issue(
@@ -163,9 +179,10 @@ func TestService_Login(t *testing.T) {
 				return service.AccessToken{Value: "access-token"}, nil
 			}},
 			want: service.LoginResult{
-				UserID:      storedUser.ID,
-				Email:       storedUser.Email,
-				AccessToken: service.AccessToken{Value: "access-token"},
+				UserID:       storedUser.ID,
+				Email:        storedUser.Email,
+				AccessToken:  service.AccessToken{Value: "access-token"},
+				RefreshToken: service.RefreshToken{Value: "refresh-token"},
 			},
 		},
 		{
@@ -249,4 +266,16 @@ func TestService_Login(t *testing.T) {
 			require.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func TestService_Refresh(t *testing.T) {
+	t.Parallel()
+	issuer := &fakeTokenIssuer{refresh: func(_ context.Context, token string) (service.AccessToken, error) {
+		require.Equal(t, "refresh-token", token)
+		return service.AccessToken{Value: "new-access"}, nil
+	}}
+	authService := service.New(repositorymocks.NewUserRepository(t), &fakePasswordHasher{}, issuer)
+	got, err := authService.Refresh(t.Context(), service.RefreshInput{RefreshToken: "refresh-token"})
+	require.NoError(t, err)
+	require.Equal(t, service.AccessToken{Value: "new-access"}, got)
 }

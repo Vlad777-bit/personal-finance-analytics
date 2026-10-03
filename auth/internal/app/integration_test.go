@@ -33,6 +33,7 @@ func TestAuthGRPC(t *testing.T) {
 		"0123456789abcdef0123456789abcdef",
 		"auth-integration-test",
 		15*time.Minute,
+		30*24*time.Hour,
 		"127.0.0.1:0",
 	)
 	require.NoError(t, err)
@@ -85,12 +86,18 @@ func TestAuthGRPC(t *testing.T) {
 	require.Equal(t, registerResponse.GetUser().GetId(), loginResponse.GetUserId())
 	require.Equal(t, email, loginResponse.GetEmail())
 	require.NotEmpty(t, loginResponse.GetAccessToken())
+	require.NotEmpty(t, loginResponse.GetRefreshToken())
+	require.NotNil(t, loginResponse.GetRefreshExpiresAt())
 	require.WithinDuration(
 		t,
 		time.Now().Add(15*time.Minute),
 		loginResponse.GetExpiresAt().AsTime(),
 		time.Second,
 	)
+	refreshResponse, err := client.Refresh(rpcContext, &authv1.RefreshRequest{RefreshToken: loginResponse.GetRefreshToken()})
+	require.NoError(t, err)
+	require.NotEmpty(t, refreshResponse.GetAccessToken())
+	require.NotNil(t, refreshResponse.GetExpiresAt())
 
 	_, err = client.Login(rpcContext, &authv1.LoginRequest{
 		Email: email, Password: "wrong-password",

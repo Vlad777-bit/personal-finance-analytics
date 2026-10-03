@@ -138,6 +138,14 @@ curl -X POST http://localhost:8080/auth/login \
   -d '{"email":"user@example.com","password":"secure-password"}'
 ```
 
+Ответ login содержит access и refresh токены. Если access token истёк, получите новый без повторного ввода пароля:
+
+```bash
+curl -X POST http://localhost:8080/auth/refresh \
+  -H 'Content-Type: application/json' \
+  -d '{"refresh_token":"<refresh_token>"}'
+```
+
 Передавайте токен в защищённые endpoints:
 
 ```bash

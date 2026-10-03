@@ -16,7 +16,7 @@ func (c *Client) Login(ctx context.Context, input LoginInput) (LoginResult, erro
 		return LoginResult{}, mapError(err)
 	}
 	if response == nil || response.GetUserId() == "" ||
-		response.GetEmail() == "" || response.GetAccessToken() == "" {
+		response.GetEmail() == "" || response.GetAccessToken() == "" || response.GetRefreshToken() == "" {
 		return LoginResult{}, ErrInvalidResponse
 	}
 	if response.GetExpiresAt() == nil {
@@ -28,11 +28,16 @@ func (c *Client) Login(ctx context.Context, input LoginInput) (LoginResult, erro
 	if err := response.GetExpiresAt().CheckValid(); err != nil {
 		return LoginResult{}, errors.Join(ErrInvalidResponse, err)
 	}
+	if response.GetRefreshExpiresAt() == nil || response.GetRefreshExpiresAt().CheckValid() != nil {
+		return LoginResult{}, ErrInvalidResponse
+	}
 
 	return LoginResult{
-		UserID:      response.GetUserId(),
-		Email:       response.GetEmail(),
-		AccessToken: response.GetAccessToken(),
-		ExpiresAt:   response.GetExpiresAt().AsTime(),
+		UserID:           response.GetUserId(),
+		Email:            response.GetEmail(),
+		AccessToken:      response.GetAccessToken(),
+		ExpiresAt:        response.GetExpiresAt().AsTime(),
+		RefreshToken:     response.GetRefreshToken(),
+		RefreshExpiresAt: response.GetRefreshExpiresAt().AsTime(),
 	}, nil
 }

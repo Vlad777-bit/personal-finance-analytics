@@ -16,6 +16,7 @@ const (
 	defaultBcryptCost      = 12
 	defaultJWTIssuer       = "personal-finance-analytics/auth"
 	defaultJWTAccessTTL    = 15 * time.Minute
+	defaultJWTRefreshTTL   = 30 * 24 * time.Hour
 	minimumBcryptCost      = 4
 	maximumBcryptCost      = 31
 	minimumJWTSecretBytes  = 32
@@ -31,6 +32,7 @@ type Config struct {
 	JWTSecret       string
 	JWTIssuer       string
 	JWTAccessTTL    time.Duration
+	JWTRefreshTTL   time.Duration
 }
 
 func Load() (Config, error) {
@@ -79,6 +81,10 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	jwtRefreshTTL, err := positiveDuration("AUTH_JWT_REFRESH_TTL", defaultJWTRefreshTTL)
+	if err != nil {
+		return Config{}, err
+	}
 
 	return Config{
 		DatabaseURL:     databaseURL,
@@ -88,6 +94,7 @@ func Load() (Config, error) {
 		JWTSecret:       jwtSecret,
 		JWTIssuer:       envOrDefault("AUTH_JWT_ISSUER", defaultJWTIssuer),
 		JWTAccessTTL:    jwtAccessTTL,
+		JWTRefreshTTL:   jwtRefreshTTL,
 	}, nil
 }
 

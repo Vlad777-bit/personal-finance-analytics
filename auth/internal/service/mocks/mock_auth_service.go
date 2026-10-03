@@ -22,6 +22,40 @@ type AuthService_Expecter struct {
 	mock *mock.Mock
 }
 
+func (_m *AuthService) Refresh(ctx context.Context, input service.RefreshInput) (service.AccessToken, error) {
+	ret := _m.Called(ctx, input)
+	var r0 service.AccessToken
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, service.RefreshInput) (service.AccessToken, error)); ok {
+		return rf(ctx, input)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, service.RefreshInput) service.AccessToken); ok {
+		r0 = rf(ctx, input)
+	} else {
+		r0 = ret.Get(0).(service.AccessToken)
+	}
+	if rf, ok := ret.Get(1).(func(context.Context, service.RefreshInput) error); ok {
+		r1 = rf(ctx, input)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+type AuthService_Refresh_Call struct{ *mock.Call }
+
+func (_e *AuthService_Expecter) Refresh(ctx interface{}, input interface{}) *AuthService_Refresh_Call {
+	return &AuthService_Refresh_Call{Call: _e.mock.On("Refresh", ctx, input)}
+}
+func (_c *AuthService_Refresh_Call) Return(_a0 service.AccessToken, _a1 error) *AuthService_Refresh_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+func (_c *AuthService_Refresh_Call) RunAndReturn(run func(context.Context, service.RefreshInput) (service.AccessToken, error)) *AuthService_Refresh_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 func (_m *AuthService) EXPECT() *AuthService_Expecter {
 	return &AuthService_Expecter{mock: &_m.Mock}
 }

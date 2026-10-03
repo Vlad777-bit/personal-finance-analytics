@@ -24,9 +24,11 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httptransport.WriteJSON(w, http.StatusOK, loginResponse{
-		UserID:      result.UserID,
-		Email:       result.Email,
-		AccessToken: result.AccessToken,
-		ExpiresAt:   result.ExpiresAt,
+		UserID:           result.UserID,
+		Email:            result.Email,
+		AccessToken:      result.AccessToken,
+		ExpiresAt:        result.ExpiresAt,
+		RefreshToken:     result.RefreshToken,
+		RefreshExpiresAt: result.RefreshExpiresAt,
 	})
 }

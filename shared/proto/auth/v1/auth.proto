@@ -9,6 +9,7 @@ option go_package = "github.com/Vlad777-bit/personal-finance-analytics/shared/ge
 service AuthService {
   rpc Register(RegisterRequest) returns (RegisterResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
+  rpc Refresh(RefreshRequest) returns (RefreshResponse);
 }
 
 message User {
@@ -36,4 +37,15 @@ message LoginResponse {
   string email = 2;
   string access_token = 3;
   google.protobuf.Timestamp expires_at = 4;
+  string refresh_token = 5;
+  google.protobuf.Timestamp refresh_expires_at = 6;
+}
+
+message RefreshRequest {
+  string refresh_token = 1;
+}
+
+message RefreshResponse {
+  string access_token = 1;
+  google.protobuf.Timestamp expires_at = 2;
 }
